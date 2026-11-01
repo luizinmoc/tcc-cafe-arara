@@ -1,0 +1,28 @@
+# =============================================================================
+# TCC - Visão Computacional: Maturação do Café Arara
+# Dependências do Projeto
+# =============================================================================
+
+# Detecção de objetos (YOLOv8)
+ultralytics>=8.2.0
+
+# Processamento de imagem
+opencv-python>=4.9.0
+opencv-python-headless>=4.9.0
+Pillow>=10.0.0
+
+# Interface web
+streamlit>=1.35.0
+
+# Computação numérica e dados
+numpy>=1.26.0
+pandas>=2.1.0
+
+# Visualização (gráficos no dashboard)
+matplotlib>=3.8.0
+plotly>=5.18.0
+
+# Utilitários
+tqdm>=4.66.0
+pyyaml>=6.0.1
+scikit-learn>=1.4.0

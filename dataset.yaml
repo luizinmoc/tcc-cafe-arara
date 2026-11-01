@@ -1,0 +1,33 @@
+# =============================================================================
+# Configuração do Dataset YOLO — Café Arara (5 Estágios de Maturação)
+# =============================================================================
+# Baseado no Guia Visual de Cores da variedade Arara
+# (cruzamento Yellow Catuaí × Mundo Novo).
+#
+# Os frutos maduros desta variedade são AMARELOS (não vermelhos).
+# =============================================================================
+
+# Caminho absoluto da raiz do dataset
+path: C:/Users/user/.gemini/antigravity/scratch/tcc-cafe-arara
+train: data/images/train
+val: data/images/val
+
+# ---------------------------------------------------------------------------
+# 5 Classes de Maturação (ordem crescente de maturidade)
+# ---------------------------------------------------------------------------
+# ID | Classe   | Cor Visual           | Estágio
+#  0 | verde    | Verde intenso        | Imaturo — fruto duro
+#  1 | amarelo  | Amarelo pálido       | Em maturação (transição verde→amarelo)
+#  2 | cereja   | Amarelo vibrante     | Ponto ideal de colheita ★
+#  3 | passado  | Amarelo ocre/escuro  | Seco parcial (fruto murchando)
+#  4 | seco     | Marrom / Preto       | Completamente seco (casca enrugada)
+# ---------------------------------------------------------------------------
+
+nc: 5
+
+names:
+  0: verde
+  1: amarelo
+  2: cereja
+  3: passado
+  4: seco

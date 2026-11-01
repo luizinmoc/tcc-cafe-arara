@@ -1,0 +1,46 @@
+# =============================================================================
+# .gitignore — TCC Café Arara
+# =============================================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Ambiente virtual
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dados e pesos (arquivos grandes)
+data/
+yolov8n.pt
+weights/*.pt
+!weights/.gitkeep
+!weights/best.pt
+
+# Resultados de treinamento YOLO
+outputs/
+runs/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Streamlit
+.streamlit/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb

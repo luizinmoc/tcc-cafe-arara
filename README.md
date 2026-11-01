@@ -182,10 +182,10 @@ Este projeto está licenciado sob a licença MIT. Consulte o arquivo [LICENSE](L
 
 ## 👤 Autor
 
-**[Seu Nome]**
-- Curso: [Nome do Curso]
-- Instituição: [Nome da Instituição]
-- Orientador(a): [Nome do Orientador(a)]
+**Luiz Gustavo Souza Santos**
+- Curso: Engenharia de Sistemas
+- Instituição: Unimontes
+- Orientador(a): Steve Lacerda
 
 ---
 

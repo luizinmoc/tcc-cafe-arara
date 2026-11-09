@@ -56,7 +56,15 @@ tcc-cafe-arara/
 - **GPU com CUDA** (recomendado para treinamento; CPU funciona para inferência)
 - Imagens anotadas no formato **YOLO** (bounding boxes `.txt`)
 
-## 🚀 Instalação
+## ⚡ Execução Rápida (1 Clique)
+
+Você pode iniciar o sistema com apenas um duplo clique:
+- **`Iniciar_TCC.exe`**: Executável nativo que detecta o Python, cria o ambiente isolado `venv`, baixa e instala todas as dependências automaticamente e abre o navegador em `http://localhost:8501`.
+- **`INICIAR_TCC.bat`**: Versão script em lote alternativa com o mesmo comportamento automatizado.
+
+---
+
+## 🚀 Instalação Manual (Passo a Passo)
 
 ### 1. Clone o repositório
 

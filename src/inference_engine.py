@@ -68,8 +68,8 @@ def run_inference(
     iou_threshold: float = 0.65,
     tile_size: int = 640,
     stride: int = 360,
-    draw_style: str = "dots",  # "dots", "boxes" ou "both"
-    dot_size: int = 4,
+    draw_style: str = "boxes",  # Modo Bounding Boxes
+    box_thickness: int = 2,
 ) -> dict[str, Any]:
     """Executa a inferência completa sobre a imagem, refinando maturação e gerando anotações."""
     model = get_model()
@@ -206,20 +206,13 @@ def run_inference(
         status_colheita = "Catação Necessária"
         badge_cor = "#ef4444"
 
-    # Renderizar imagem anotada
+    # Renderizar imagem anotada com Bounding Boxes
     annotated_bgr = image_bgr.copy()
     for d in detections:
         cid = d["class_id"]
         color = CLASS_COLORS_BGR.get(cid, (255, 255, 255))
-        cx, cy = d["center"]
         x1, y1, x2, y2 = d["bbox"]
-
-        if draw_style in ("dots", "both"):
-            cv2.circle(annotated_bgr, (cx, cy), dot_size, color, -1)
-            cv2.circle(annotated_bgr, (cx, cy), dot_size + 1, (20, 20, 20), 1)
-
-        if draw_style in ("boxes", "both"):
-            cv2.rectangle(annotated_bgr, (x1, y1), (x2, y2), color, 1)
+        cv2.rectangle(annotated_bgr, (x1, y1), (x2, y2), color, max(1, int(box_thickness)))
 
     # Converter imagem para Base64 JPEG otimizado
     # Se a imagem for 4K muito grande, redimensionar versão web para transmissão rápida

@@ -128,17 +128,16 @@ async def handle_analyze(request: Request) -> JSONResponse:
         # Parâmetros opcionais
         confidence = float(form.get("confidence", 0.04))
         iou_threshold = float(form.get("iou", 0.65))
-        draw_style = str(form.get("style", "dots"))
-        dot_size = int(form.get("dot_size", 4))
+        box_thickness = int(form.get("box_thickness", 2))
         auto_learn = str(form.get("auto_learn", "false")).lower() in ("true", "1")
 
-        # Executar inferência profunda com calibração de cor
+        # Executar inferência profunda com calibração de cor (Bounding Boxes)
         result = run_inference(
             image_bgr=img_bgr,
             confidence=confidence,
             iou_threshold=iou_threshold,
-            draw_style=draw_style,
-            dot_size=dot_size,
+            draw_style="boxes",
+            box_thickness=box_thickness,
         )
 
         # Registrar no histórico sem zip

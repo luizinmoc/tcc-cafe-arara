@@ -12,6 +12,7 @@ cd /d "%~dp0"
 
 set "VENV_DIR=%~dp0venv"
 set "PYTHON_EXE=%VENV_DIR%\Scripts\python.exe"
+set "PYTHONPATH=%~dp0"
 
 if not exist "%PYTHON_EXE%" (
     echo [ERRO] Ambiente virtual venv nao encontrado!

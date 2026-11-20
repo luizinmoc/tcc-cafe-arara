@@ -1,11 +1,11 @@
 ﻿@echo off
 chcp 65001 > nul
-title Sistema de Maturacao Cafe Arara - TCC
+title Cafe Arara AI — Dashboard Profissional TCC
 color 0A
 
 echo ========================================================================
-echo    CAFE ARARA - IDENTIFICACAO E MATURACAO AUTOMATICA (TCC)
-echo    Visao Computacional com Deep Learning (YOLOv8 + Streamlit)
+echo    CAFE ARARA AI — VISAO COMPUTACIONAL E APRENDIZADO CONTINUO (TCC)
+echo    Classificacao da Maturacao com Deep Learning YOLOv8 + React Dashboard
 echo ========================================================================
 echo.
 
@@ -14,6 +14,7 @@ cd /d "%~dp0"
 set "VENV_DIR=%~dp0venv"
 set "PYTHON_EXE=%VENV_DIR%\Scripts\python.exe"
 
+:: 1. Verificar ambiente
 if not exist "%PYTHON_EXE%" (
     echo [1/3] Localizando Python no sistema...
     where python >nul 2>nul
@@ -40,7 +41,7 @@ if not exist "%PYTHON_EXE%" (
 )
 
 :: 2. Testar e validar bibliotecas
-echo [2/3] Verificando integridade das bibliotecas...
+echo [2/3] Verificando integridade das bibliotecas de IA...
 "%PYTHON_EXE%" "%~dp0verify_environment.py"
 if errorlevel 1 (
     echo.
@@ -51,18 +52,19 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: 3. Iniciar Streamlit e abrir navegador
+:: 3. Iniciar Servidor Web React e abrir navegador
 echo.
 echo ========================================================================
-echo    SERVIDOR LOCAL INICIADO COM SUCESSO!
+echo    SERVIDOR WEB DO DASHBOARD INICIADO COM SUCESSO!
 echo    Acesse no navegador: http://localhost:8501
 echo ========================================================================
-echo    Para fechar a aplicacao: feche esta janela ou aperte Ctrl+C.
+echo    * Interface React 18 + Deep Learning YOLOv8 ativa.
+echo    * Para fechar a aplicacao: feche esta janela ou aperte Ctrl+C.
 echo ========================================================================
 echo.
 
 start "" "http://localhost:8501"
-"%PYTHON_EXE%" -m streamlit run "%~dp0app\app.py" --server.port 8501
+"%PYTHON_EXE%" "%~dp0web\server.py"
 
 echo.
 echo Aplicacao finalizada.

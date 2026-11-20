@@ -2,16 +2,8 @@
 """
 continuous_learning.py — Módulo de Aprendizado Contínuo (Active / Continuous Learning).
 
-Implementa o ciclo leve e profissional de re-treinamento sob demanda (Fine-Tuning Incremental)
+Implementa o ciclo leve de re-treinamento incremental sob demanda
 para o modelo YOLOv8 no projeto de TCC de Maturação do Café Arara.
-
-Características:
-- Fine-Tuning rápido: Congela camadas convolucionais base (freeze=10) e ajusta apenas
-  as camadas superiores de detecção e classificação.
-- Execução leve: 3 a 5 épocas com taxa de aprendizado controlada (lr0=0.0003),
-  levando cerca de 40 a 60 segundos na CPU sem sobrecarregar o computador.
-- Preserva o modelo existente e atualiza `weights/best.pt` de forma segura e atômica.
-- Registra cada evolução na base de dados compactada (`base_dados_tcc.zip`).
 """
 
 from __future__ import annotations
@@ -32,16 +24,14 @@ logger = logging.getLogger("continuous_learning")
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 WEIGHTS_DIR = PROJECT_ROOT / "weights"
 BEST_WEIGHTS_PATH = WEIGHTS_DIR / "best.pt"
+BACKUP_WEIGHTS_PATH = WEIGHTS_DIR / "best_previous_backup.pt"
 DATASET_YAML = PROJECT_ROOT / "dataset.yaml"
 OUTPUTS_DIR = PROJECT_ROOT / "outputs"
+HISTORY_FILE = OUTPUTS_DIR / "historico_aprendizado.json"
 
 
 def get_learning_status() -> dict[str, Any]:
-    """Retorna o status atual do modelo e do pipeline de aprendizado contínuo.
-
-    Returns:
-        Dicionário com informações sobre o modelo, peso e histórico de aprendizado.
-    """
+    """Retorna o status atual do modelo e do pipeline de aprendizado contínuo."""
     weights_exist = BEST_WEIGHTS_PATH.exists()
     weights_size_mb = (
         BEST_WEIGHTS_PATH.stat().st_size / (1024 * 1024) if weights_exist else 0.0
@@ -52,12 +42,10 @@ def get_learning_status() -> dict[str, Any]:
         else "Nunca"
     )
 
-    # Ler histórico de versões de aprendizado se existir
-    history_file = OUTPUTS_DIR / "historico_aprendizado.json"
     history = []
-    if history_file.exists():
+    if HISTORY_FILE.exists():
         try:
-            history = json.loads(history_file.read_text(encoding="utf-8"))
+            history = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
         except Exception:
             history = []
 
@@ -71,7 +59,7 @@ def get_learning_status() -> dict[str, Any]:
         "last_modified": last_modified,
         "current_version": current_version,
         "total_fine_tunings": version_count,
-        "history": history,
+        "history": list(reversed(history[-10:])),
     }
 
 
@@ -82,25 +70,11 @@ def execute_continuous_fine_tuning(
     freeze_layers: int = 10,
     progress_callback: Callable[[str, float], None] | None = None,
 ) -> dict[str, Any]:
-    """Executa um ciclo rápido e leve de Fine-Tuning Incremental.
-
-    Args:
-        epochs: Número de épocas de ajuste fino (default: 3).
-        batch_size: Tamanho do lote (default: 8).
-        learning_rate: Taxa de aprendizado baixa para evitar esquecimento (default: 0.0003).
-        freeze_layers: Camadas iniciais congeladas para velocidade e estabilidade (default: 10).
-        progress_callback: Função opcional para atualização de status na interface Streamlit.
-
-    Returns:
-        Dicionário com o resumo da evolução do modelo.
-    """
+    """Executa um ciclo rápido e leve de Fine-Tuning Incremental."""
     start_time = time.time()
 
     if not BEST_WEIGHTS_PATH.exists():
-        raise FileNotFoundError(
-            f"Arquivo de pesos base não encontrado em: {BEST_WEIGHTS_PATH}. "
-            f"Execute o treinamento inicial primeiro."
-        )
+        raise FileNotFoundError(f"Pesos base não encontrados em: {BEST_WEIGHTS_PATH}")
 
     if progress_callback:
         progress_callback("Inicializando modelo pré-treinado e dados...", 0.15)
@@ -112,9 +86,8 @@ def execute_continuous_fine_tuning(
     model = YOLO(str(BEST_WEIGHTS_PATH))
 
     if progress_callback:
-        progress_callback("Executando ajuste fino incremental nos neurônios...", 0.35)
+        progress_callback("Executando ajuste fino incremental nos neurônios...", 0.40)
 
-    # Executar fine-tuning otimizado
     try:
         results = model.train(
             data=str(DATASET_YAML),
@@ -139,37 +112,30 @@ def execute_continuous_fine_tuning(
     if progress_callback:
         progress_callback("Otimizando e consolidando novos pesos...", 0.85)
 
-    # Caminho do peso gerado pelo fine-tuning
     new_best = project_run_dir / "weights" / "best.pt"
     if not new_best.exists():
-        # Fallback para last.pt se best não tiver sido criado
         new_best = project_run_dir / "weights" / "last.pt"
 
     if new_best.exists():
-        # Fazer backup do modelo anterior antes de sobrescrever
-        backup_path = WEIGHTS_DIR / "best_previous_backup.pt"
         if BEST_WEIGHTS_PATH.exists():
-            shutil.copy2(BEST_WEIGHTS_PATH, backup_path)
-
-        # Atualizar pesos oficiais
+            shutil.copy2(BEST_WEIGHTS_PATH, BACKUP_WEIGHTS_PATH)
         shutil.copy2(new_best, BEST_WEIGHTS_PATH)
         logger.info("Pesos atualizados com sucesso em: %s", BEST_WEIGHTS_PATH)
 
     elapsed_seconds = round(time.time() - start_time, 1)
 
-    # Registrar no histórico de aprendizado contínuo
     OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
-    history_file = OUTPUTS_DIR / "historico_aprendizado.json"
     history = []
-    if history_file.exists():
+    if HISTORY_FILE.exists():
         try:
-            history = json.loads(history_file.read_text(encoding="utf-8"))
+            history = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
         except Exception:
             history = []
 
     version_num = len(history) + 1
+    new_version_tag = f"v1.{version_num}"
     record = {
-        "version": f"v1.{version_num}",
+        "version": new_version_tag,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "epochs": epochs,
         "batch_size": batch_size,
@@ -179,7 +145,7 @@ def execute_continuous_fine_tuning(
         "status": "sucesso",
     }
     history.append(record)
-    history_file.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
+    HISTORY_FILE.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
 
     # Limpar diretório temporário do run para economizar espaço em disco
     try:
@@ -192,7 +158,7 @@ def execute_continuous_fine_tuning(
 
     return {
         "status": "sucesso",
-        "new_version": f"v1.{version_num}",
+        "new_version": new_version_tag,
         "elapsed_seconds": elapsed_seconds,
         "epochs": epochs,
         "weights_path": str(BEST_WEIGHTS_PATH),

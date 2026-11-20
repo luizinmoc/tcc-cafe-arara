@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Café Arara AI — Visão Computacional & Maturação</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fbf7ee',
+              100: '#f5ecda',
+              500: '#d97706',
+              600: '#b45309',
+              900: '#451a03',
+            },
+            stage: {
+              verde: '#10b981',
+              amarelo: '#facc15',
+              cereja: '#eab308',
+              passado: '#f97316',
+              seco: '#78350f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel Standalone para JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .glass {
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="root"></div>
+
+  <!-- React Application Script -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // Definição das classes de maturação do Café Arara
+    const CLASSES_INFO = {
+      verde: { label: 'Verde (Imaturo)', color: '#10b981', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400' },
+      amarelo: { label: 'Amarelo (Em Maturação)', color: '#facc15', bg: 'bg-yellow-400/10', border: 'border-yellow-400/30', text: 'text-yellow-400' },
+      cereja: { label: 'Cereja (Ponto Ideal ★)', color: '#eab308', bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400' },
+      passado: { label: 'Passado (Sobremaduro)', color: '#f97316', bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400' },
+      seco: { label: 'Seco / Preto', color: '#a16207', bg: 'bg-amber-900/20', border: 'border-amber-900/40', text: 'text-amber-600' },
+    };
+
+    function App() {
+      // Estado de status do sistema
+      const [systemStatus, setSystemStatus] = useState(null);
+      const [samples, setSamples] = useState([]);
+      const [history, setHistory] = useState([]);
+
+      // Controles de inferência
+      const [selectedSample, setSelectedSample] = useState('');
+      const [uploadedFile, setUploadedFile] = useState(null);
+      const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+      const [confidence, setConfidence] = useState(0.04);
+      const [iou, setIou] = useState(0.65);
+      const [drawStyle, setDrawStyle] = useState('dots');
+      const [dotSize, setDotSize] = useState(4);
+      const [autoLearn, setAutoLearn] = useState(true);
+
+      // Estado de carregamento e resultado
+      const [analyzing, setAnalyzing] = useState(false);
+      const [learning, setLearning] = useState(false);
+      const [result, setResult] = useState(null);
+      const [zoomLevel, setZoomLevel] = useState(1);
+
+      const chartRef = useRef(null);
+      const chartInstance = useRef(null);
+      const fileInputRef = useRef(null);
+
+      // Carregar status e amostras ao iniciar
+      useEffect(() => {
+        fetchStatus();
+        fetchSamples();
+        fetchHistory();
+      }, []);
+
+      const fetchStatus = async () => {
+        try {
+          const res = await fetch('/api/status');
+          const data = await res.json();
+          setSystemStatus(data);
+        } catch (err) {
+          console.error('Falha ao carregar status:', err);
+        }
+      };
+
+      const fetchSamples = async () => {
+        try {
+          const res = await fetch('/api/samples');
+          const data = await res.json();
+          setSamples(data.samples || []);
+          if (data.samples && data.samples.length > 0) {
+            setSelectedSample(data.samples[0].name);
+          }
+        } catch (err) {
+          console.error('Falha ao carregar amostras:', err);
+        }
+      };
+
+      const fetchHistory = async () => {
+        try {
+          const res = await fetch('/api/history');
+          const data = await res.json();
+          setHistory(data.history || []);
+        } catch (err) {
+          console.error('Falha ao carregar histórico:', err);
+        }
+      };
+
+      // Atualizar gráfico de rosca quando os resultados mudarem
+      useEffect(() => {
+        if (!result || !chartRef.current) return;
+
+        if (chartInstance.current) {
+          chartInstance.current.destroy();
+        }
+
+        const counts = result.counts || {};
+        const labels = ['Verde', 'Amarelo', 'Cereja (Ideal)', 'Passado', 'Seco'];
+        const values = [
+          counts.verde || 0,
+          counts.amarelo || 0,
+          counts.cereja || 0,
+          counts.passado || 0,
+          counts.seco || 0,
+        ];
+        const colors = ['#10b981', '#facc15', '#eab308', '#f97316', '#78350f'];
+
+        const ctx = chartRef.current.getContext('2d');
+        chartInstance.current = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: values,
+              backgroundColor: colors,
+              borderColor: '#0f172a',
+              borderWidth: 2,
+              hoverOffset: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: '#94a3b8', font: { size: 11 }, padding: 12 }
+              }
+            },
+            cutout: '68%'
+          }
+        });
+      }, [result]);
+
+      // Executar Inferência
+      const handleRunAnalysis = async () => {
+        setAnalyzing(true);
+        const formData = new FormData();
+        formData.append('confidence', confidence);
+        formData.append('iou', iou);
+        formData.append('style', drawStyle);
+        formData.append('dot_size', dotSize);
+        formData.append('auto_learn', autoLearn ? 'true' : 'false');
+
+        if (uploadedFile) {
+          formData.append('file', uploadedFile);
+        } else if (selectedSample) {
+          formData.append('sample_name', selectedSample);
+        } else {
+          alert('Selecione uma imagem ou amostra do experimento.');
+          setAnalyzing(false);
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/analyze', {
+            method: 'POST',
+            body: formData,
+          });
+          const data = await res.json();
+          if (data.error) {
+            alert('Erro: ' + data.error);
+          } else {
+            setResult(data);
+            fetchStatus();
+            fetchHistory();
+          }
+        } catch (err) {
+          alert('Erro de comunicação com o servidor: ' + err.message);
+        } finally {
+          setAnalyzing(false);
+        }
+      };
+
+      // Disparar ciclo manual de continuous learning
+      const handleManualLearning = async () => {
+        if (!confirm('Deseja iniciar um ciclo de aperfeiçoamento incremental dos pesos da rede neural?')) return;
+        setLearning(true);
+        try {
+          const res = await fetch('/api/learn', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ epochs: 3 })
+          });
+          const data = await res.json();
+          if (data.status === 'sucesso') {
+            alert(`Aprendizado concluído com sucesso! Nova versão ativa: ${data.details.new_version}`);
+            fetchStatus();
+          } else {
+            alert('Falha: ' + data.message);
+          }
+        } catch (err) {
+          alert('Erro ao disparar fine-tuning: ' + err.message);
+        } finally {
+          setLearning(false);
+        }
+      };
+
+      // Exportar resultados para CSV
+      const handleExportCSV = () => {
+        if (!result) return;
+        const counts = result.counts;
+        const ratios = result.ratios;
+        const csvContent = "data:text/csv;charset=utf-8," +
+          "Classe,Quantidade,Percentual\n" +
+          `Verde,${counts.verde},${ratios.verde}%\n` +
+          `Amarelo,${counts.amarelo},${ratios.amarelo}%\n` +
+          `Cereja (Ideal),${counts.cereja},${ratios.cereja}%\n` +
+          `Passado,${counts.passado},${ratios.passado}%\n` +
+          `Seco,${counts.seco},${ratios.seco}%\n` +
+          `Total,${result.total_graos},100%`;
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `analise_maturacao_${Date.now()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      return (
+        <div className="flex flex-col min-h-screen">
+          {/* Top Navbar */}
+          <header className="glass sticky top-0 z-50 px-6 py-4 border-b border-slate-800">
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-amber-500/20">
+                  ☕
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-slate-100 flex items-center space-x-2">
+                    <span>Café Arara AI</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      TCC Deep Learning
+                    </span>
+                  </h1>
+                  <p className="text-xs text-slate-400">Classificação e Contagem Automática de Maturação (5 Estágios)</p>
+                </div>
+              </div>
+
+              {/* Status Badges */}
+              <div className="flex items-center space-x-3 text-xs">
+                <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="text-slate-300">YOLOv8:</span>
+                  <span className="font-bold text-amber-400">{systemStatus?.model_version || 'v1.0'}</span>
+                </div>
+
+                <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-300">
+                  <span>Ciclos Fine-Tuning:</span>
+                  <span className="font-bold text-emerald-400">{systemStatus?.total_fine_tunings ?? 0}</span>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* Main Layout */}
+          <main className="flex-1 max-w-7xl mx-auto w-full p-6 space-y-6">
+            
+            {/* KPI Cards (Metricas das 5 Classes) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {/* Card Total */}
+              <div className="glass-card rounded-xl p-4 flex flex-col justify-between border-l-4 border-l-amber-500">
+                <span className="text-xs uppercase tracking-wider text-slate-400 font-medium">Total de Frutos</span>
+                <div className="text-2xl font-black text-slate-100 mt-1">
+                  {result ? result.total_graos.toLocaleString('pt-BR') : '—'}
+                </div>
+                <span className="text-[11px] text-slate-400 mt-1">100% Cobertura</span>
+              </div>
+
+              {/* 5 Classes */}
+              {Object.entries(CLASSES_INFO).map(([key, info]) => {
+                const count = result?.counts?.[key] ?? 0;
+                const ratio = result?.ratios?.[key] ?? 0;
+                return (
+                  <div key={key} className={`glass-card rounded-xl p-4 flex flex-col justify-between border-l-4`} style={{ borderLeftColor: info.color }}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-300 truncate">{info.label}</span>
+                    </div>
+                    <div className="text-2xl font-bold mt-1" style={{ color: info.color }}>
+                      {result ? count.toLocaleString('pt-BR') : '—'}
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+                      <span>Proporção:</span>
+                      <span className="font-bold text-slate-200">{result ? `${ratio}%` : '0%'}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Area de Trabalho: Visualizador + Controles */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              
+              {/* Coluna Esquerda: Visualizador da Imagem (8 colunas) */}
+              <div className="lg:col-span-8 flex flex-col space-y-4">
+                <div className="glass rounded-xl p-4 flex flex-col h-[580px] relative overflow-hidden">
+                  
+                  {/* Barra de Ferramentas Superior do Visualizador */}
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-semibold text-slate-300">Modo de Visualização:</span>
+                      <div className="flex bg-slate-900 rounded-lg p-0.5 border border-slate-700/60 text-xs">
+                        <button
+                          onClick={() => setDrawStyle('dots')}
+                          className={`px-3 py-1 rounded-md transition ${drawStyle === 'dots' ? 'bg-amber-600 text-white font-medium' : 'text-slate-400 hover:text-white'}`}
+                        >
+                          Pontos
+                        </button>
+                        <button
+                          onClick={() => setDrawStyle('boxes')}
+                          className={`px-3 py-1 rounded-md transition ${drawStyle === 'boxes' ? 'bg-amber-600 text-white font-medium' : 'text-slate-400 hover:text-white'}`}
+                        >
+                          Bounding Boxes
+                        </button>
+                        <button
+                          onClick={() => setDrawStyle('both')}
+                          className={`px-3 py-1 rounded-md transition ${drawStyle === 'both' ? 'bg-amber-600 text-white font-medium' : 'text-slate-400 hover:text-white'}`}
+                        >
+                          Ambos
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Controles de Zoom */}
+                    <div className="flex items-center space-x-2 text-xs">
+                      <button 
+                        onClick={() => setZoomLevel(prev => Math.max(0.6, prev - 0.2))}
+                        className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200"
+                        title="Diminuir Zoom"
+                      >
+                        🔍 -
+                      </button>
+                      <span className="text-slate-400 w-12 text-center">{Math.round(zoomLevel * 100)}%</span>
+                      <button 
+                        onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.2))}
+                        className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200"
+                        title="Aumentar Zoom"
+                      >
+                        🔍 +
+                      </button>
+                      <button 
+                        onClick={() => setZoomLevel(1)}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
+                        title="Redefinir Zoom"
+                      >
+                        ↺
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Canvas / Imagem Renderizada */}
+                  <div className="flex-1 overflow-auto flex items-center justify-center p-2 relative bg-slate-950/60 rounded-lg mt-3">
+                    {analyzing && (
+                      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center space-y-3">
+                        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-sm font-medium text-amber-300">Processando grade de alta resolução e NMS global...</p>
+                        <span className="text-xs text-slate-400">Classificando cada grão por espectrometria HSV</span>
+                      </div>
+                    )}
+
+                    {result?.annotated_image_b64 ? (
+                      <img
+                        src={result.annotated_image_b64}
+                        alt="Imagem Anotada do Café Arara"
+                        style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center center', transition: 'transform 0.15s ease-out' }}
+                        className="max-h-full max-w-full object-contain rounded shadow-2xl"
+                      />
+                    ) : imagePreviewUrl ? (
+                      <img
+                        src={imagePreviewUrl}
+                        alt="Pré-visualização"
+                        style={{ transform: `scale(${zoomLevel})` }}
+                        className="max-h-full max-w-full object-contain opacity-60 rounded"
+                      />
+                    ) : (
+                      <div className="text-center p-8 text-slate-500 flex flex-col items-center space-y-3">
+                        <span className="text-5xl opacity-40">🌱</span>
+                        <p className="text-sm text-slate-400">Nenhuma imagem analisada no momento.</p>
+                        <p className="text-xs text-slate-500 max-w-sm">
+                          Escolha uma das amostras do experimento no menu ao lado ou carregue uma imagem para contagem automática.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Rodapé do Visualizador com Metadados */}
+                  {result && (
+                    <div className="pt-2 text-xs flex items-center justify-between text-slate-400">
+                      <span>Imagem: <strong className="text-slate-200">{result.image_name}</strong> ({result.dimensoes?.largura}×{result.dimensoes?.altura}px)</span>
+                      <span>Total Detectado: <strong className="text-amber-400">{result.total_graos} grãos</strong></span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Coluna Direita: Controles & Diagnóstico (4 colunas) */}
+              <div className="lg:col-span-4 flex flex-col space-y-4">
+                
+                {/* Card de Configuração & Execução */}
+                <div className="glass rounded-xl p-5 space-y-4">
+                  <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                    <span>⚡ Parâmetros de Inferência</span>
+                  </h3>
+
+                  {/* Seletor de Amostra Pré-carregada */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-slate-300 font-medium flex items-center justify-between">
+                      <span>Amostras do Experimento (Drive)</span>
+                      <span className="text-[10px] text-amber-400 font-mono">15 Fotos 4K</span>
+                    </label>
+                    <select
+                      value={selectedSample}
+                      onChange={(e) => {
+                        setSelectedSample(e.target.value);
+                        setUploadedFile(null);
+                        setImagePreviewUrl(`/api/sample/${e.target.value}`);
+                      }}
+                      className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                    >
+                      {samples.map((s) => (
+                        <option key={s.name} value={s.name}>
+                          {s.name} ({s.size_mb} MB)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Upload de Arquivo Alternativo */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-slate-300 font-medium">Ou enviar nova foto</label>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setUploadedFile(file);
+                          setImagePreviewUrl(URL.createObjectURL(file));
+                          setSelectedSample('');
+                        }
+                      }}
+                      className="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Sliders: Confiança e Tamanho */}
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-slate-400">
+                        <span>Confiança</span>
+                        <span className="text-amber-400 font-mono">{confidence}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.01"
+                        max="0.50"
+                        step="0.01"
+                        value={confidence}
+                        onChange={(e) => setConfidence(parseFloat(e.target.value))}
+                        className="w-full accent-amber-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-slate-400">
+                        <span>Tam. Ponto</span>
+                        <span className="text-amber-400 font-mono">{dotSize}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="2"
+                        max="8"
+                        step="1"
+                        value={dotSize}
+                        onChange={(e) => setDotSize(parseInt(e.target.value))}
+                        className="w-full accent-amber-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Checkbox de Aprendizado Ativo */}
+                  <div className="pt-1">
+                    <label className="flex items-center space-x-2.5 text-xs text-slate-300 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={autoLearn}
+                        onChange={(e) => setAutoLearn(e.target.checked)}
+                        className="rounded border-slate-700 text-amber-500 focus:ring-amber-500 h-4 w-4 bg-slate-900"
+                      />
+                      <span className="flex-1">
+                        <strong className="text-amber-300">Aprendizado Contínuo Ativo</strong>: Aperfeiçoar neurônios automaticamente a cada teste
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Botão de Análise Principal */}
+                  <button
+                    onClick={handleRunAnalysis}
+                    disabled={analyzing}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-50"
+                  >
+                    <span>{analyzing ? 'Processando Grade YOLOv8...' : '🚀 Analisar Imagem & Contabilizar'}</span>
+                  </button>
+                </div>
+
+                {/* Card de Diagnóstico Agronômico & Gráfico */}
+                <div className="glass rounded-xl p-5 space-y-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-2">
+                      📊 Diagnóstico da Maturação
+                    </h3>
+
+                    {result ? (
+                      <div className="space-y-3">
+                        <div 
+                          className="p-3 rounded-lg border text-xs"
+                          style={{ backgroundColor: `${result.badge_cor}15`, borderColor: `${result.badge_cor}40` }}
+                        >
+                          <div className="font-bold flex items-center space-x-1.5 mb-1" style={{ color: result.badge_cor }}>
+                            <span>●</span>
+                            <span>{result.status_colheita}</span>
+                          </div>
+                          <p className="text-slate-300 leading-relaxed">{result.recomendacao}</p>
+                        </div>
+
+                        {/* Grafico Donut */}
+                        <div className="h-44 w-full relative">
+                          <canvas ref={chartRef}></canvas>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="h-44 flex items-center justify-center text-xs text-slate-500 text-center">
+                        Execute a análise para visualizar o diagnóstico e distribuição.
+                      </div>
+                    )}
+                  </div>
+
+                  {result && (
+                    <button
+                      onClick={handleExportCSV}
+                      className="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 flex items-center justify-center space-x-2 transition"
+                    >
+                      <span>📥 Baixar Relatório da Análise (CSV)</span>
+                    </button>
+                  )}
+                </div>
+
+              </div>
+            </div>
+
+            {/* Painel Inferior: Aprendizado Contínuo & Auditoria do Modelo */}
+            <div className="glass rounded-xl p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-slate-800 gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-slate-100 flex items-center space-x-2">
+                    <span>🧠 Estação de Aprendizado Contínuo (Machine Learning)</span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Fine-Tuning com congelamento de camadas convolucionais para aprimoramento contínuo sem perda catastrófica.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleManualLearning}
+                  disabled={learning}
+                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition flex items-center space-x-2 disabled:opacity-50 shadow-md shadow-emerald-500/20"
+                >
+                  <span>{learning ? 'Executando Fine-Tuning...' : '⚡ Forçar Ciclo de Aperfeiçoamento'}</span>
+                </button>
+              </div>
+
+              {/* Tabela do Histórico de Versões */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-300">
+                  <thead className="text-[11px] uppercase bg-slate-900/60 text-slate-400 border-b border-slate-800">
+                    <tr>
+                      <th className="py-2.5 px-3">Versão do Modelo</th>
+                      <th className="py-2.5 px-3">Data e Hora</th>
+                      <th className="py-2.5 px-3">Épocas</th>
+                      <th className="py-2.5 px-3">Tempo de Treino</th>
+                      <th className="py-2.5 px-3">Dispositivo</th>
+                      <th className="py-2.5 px-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 font-mono text-[11px]">
+                    {systemStatus?.history && systemStatus.history.length > 0 ? (
+                      systemStatus.history.map((h, i) => (
+                        <tr key={i} className="hover:bg-slate-800/30">
+                          <td className="py-2 px-3 font-bold text-amber-400">{h.version}</td>
+                          <td className="py-2 px-3 text-slate-400">{h.timestamp}</td>
+                          <td className="py-2 px-3">{h.epochs} épocas</td>
+                          <td className="py-2 px-3 text-emerald-400">{h.elapsed_seconds}s</td>
+                          <td className="py-2 px-3 uppercase text-slate-400">{h.device}</td>
+                          <td className="py-2 px-3">
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px]">
+                              {h.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="py-4 text-center text-slate-500">
+                          Nenhum ciclo de aprendizado registrado ainda. Versão inicial ativa.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </main>
+
+          {/* Footer */}
+          <footer className="glass border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-500">
+            <p>Trabalho de Conclusão de Curso (TCC) — Visão Computacional Aplicada à Maturação do Café Arara • 2026</p>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

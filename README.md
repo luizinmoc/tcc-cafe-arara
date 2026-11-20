@@ -25,28 +25,22 @@ Trabalho de Conclusão de Curso que utiliza **Visão Computacional** com modelos
 
 ```
 tcc-cafe-arara/
-├── app/
-│   └── app.py                 # Dashboard Streamlit (interface web)
-├── assets/                    # Imagens e recursos visuais do README
-├── data/
-│   ├── images/
-│   │   ├── train/             # Imagens de treinamento
-│   │   └── val/               # Imagens de validação
-│   └── labels/
-│       ├── train/             # Anotações YOLO (.txt) de treinamento
-│       └── val/               # Anotações YOLO (.txt) de validação
-├── outputs/                   # Resultados de treinamento (runs/)
+├── web/
+│   ├── server.py              # Servidor Web ASGI (Starlette + Uvicorn)
+│   └── index.html             # Dashboard profissional moderno (React 18 + Tailwind)
 ├── src/
-│   ├── __init__.py
-│   ├── dataset_prep.py        # Preparação e split do dataset
-│   ├── train.py               # Script de treinamento do modelo
-│   └── utils.py               # Funções utilitárias compartilhadas
+│   ├── inference_engine.py    # Motor de inferência (janelamento 1:1, NMS global, refino HSV)
+│   ├── continuous_learning.py # Módulo de aprendizado contínuo (Active Learning)
+│   ├── color_classifier.py    # Classificador espectral de cores HSV
+│   ├── data_logger.py         # Histórico estruturado de sessões (JSON/CSV)
+│   ├── prepare_tiled_dataset.py # Preparação do dataset com tiles 640x640
+│   └── utils.py               # Utilitários compartilhados e cores das classes
+├── data/                      # Imagens do experimento e dataset de treino/val
 ├── weights/
-│   └── .gitkeep               # Pesos do modelo treinado (best.pt)
-├── .gitignore
-├── dataset.yaml               # Configuração das classes YOLO
-├── requirements.txt           # Dependências do projeto
-└── README.md                  # Este arquivo
+│   └── best.pt                # Pesos treinados do modelo YOLOv8
+├── dataset.yaml               # Configuração das 5 classes YOLO
+├── INICIAR_TCC.bat            # Executável de inicialização rápida em 1 clique
+└── requirements.txt           # Dependências do projeto
 ```
 
 ## ⚙️ Pré-requisitos

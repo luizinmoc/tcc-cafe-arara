@@ -33,7 +33,9 @@ weights/*.pt
 outputs/
 runs/
 
-# Sistema operacional
+# Sistema operacional e executaveis
+*.exe
+*.dll
 .DS_Store
 Thumbs.db
 desktop.ini

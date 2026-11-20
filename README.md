@@ -59,8 +59,7 @@ tcc-cafe-arara/
 ## ⚡ Execução Rápida (1 Clique)
 
 Você pode iniciar o sistema com apenas um duplo clique:
-- **`Iniciar_TCC.exe`**: Executável nativo que detecta o Python, cria o ambiente isolado `venv`, baixa e instala todas as dependências automaticamente e abre o navegador em `http://localhost:8501`.
-- **`INICIAR_TCC.bat`**: Versão script em lote alternativa com o mesmo comportamento automatizado.
+- **`INICIAR_TCC.bat`**: Script executável que detecta o Python, cria o ambiente isolado `venv`, baixa e instala todas as dependências automaticamente e abre o navegador em `http://localhost:8501`.
 
 ---
 

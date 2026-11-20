@@ -21,6 +21,11 @@ from PIL import Image
 from ultralytics import YOLO
 
 from src.color_classifier import ColorClassifier, DEFAULT_COLOR_RANGES
+from src.grain_classifier import (
+    classify_candidates,
+    extract_grain_features,
+    precompute_image_maps,
+)
 from src.utils import CLASS_NAMES, CLASS_COLORS_BGR
 
 logger = logging.getLogger("inference_engine")
@@ -49,108 +54,6 @@ def get_model() -> YOLO:
     return _CACHED_MODEL
 
 
-def segment_tray_and_slats(
-    image_bgr: NDArray[np.uint8],
-) -> tuple[tuple[int, int, int, int], list[tuple[int, int]]]:
-    """Segmenta com precisão milimétrica os limites reais do leito de café (ROI) e detecta ripas divisórias.
-
-    Garante:
-    - Inclusão de 100% dos frutos de café, incluindo a camada superior de frutos verdes
-    - Exclusão total do chão de asfalto/concreto acima e abaixo da bandeja
-    - Exclusão total da fita métrica/trena e da viga de madeira na lateral esquerda
-    - Exclusão total da viga de madeira na lateral direita
-    - Supressão de detecções na ripa horizontal intermediária de madeira
-    """
-    h_img, w_img = image_bgr.shape[:2]
-    # Redimensionamento rápido mantendo proporção para análise robusta
-    small = cv2.resize(image_bgr, (270, 480))
-    hs, ws = small.shape[:2]
-
-    hsv = cv2.cvtColor(small, cv2.COLOR_BGR2HSV)
-    gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
-
-    # 1. Delimitação vertical (Y):
-    # O chão de asfalto superior e a moldura de madeira têm saturação baixa (S < 20).
-    # O leito de café (incluindo frutos verdes) apresenta saturação consistente (S > 24).
-    center_s = np.mean(hsv[:, int(ws * 0.3) : int(ws * 0.7), 1], axis=1)
-    kernel_y = np.ones(5) / 5
-    smooth_s = np.convolve(center_s, kernel_y, mode="same")
-
-    y_start_idx = 0
-    for y in range(int(0.01 * hs), int(0.60 * hs)):
-        if smooth_s[y] > 24 and smooth_s[min(hs - 1, y + 2)] > 24:
-            y_start_idx = y
-            break
-
-    y_end_idx = hs - 1
-    for y in range(hs - 1, int(0.50 * hs), -1):
-        if smooth_s[y] > 24 and smooth_s[max(0, y - 2)] > 24:
-            y_end_idx = y
-            break
-
-    y_min = int(y_start_idx / hs * h_img)
-    y_max = int(y_end_idx / hs * h_img)
-
-    # 2. Delimitação horizontal (X):
-    # Elimina a fita métrica e a viga de madeira esquerda, e a viga de madeira direita.
-    row_start = max(0, y_start_idx + 4)
-    row_end = min(hs, y_end_idx - 4)
-
-    col_s = np.mean(hsv[row_start:row_end, :, 1], axis=0)
-    smooth_col_s = np.convolve(col_s, np.ones(5) / 5, mode="same")
-
-    # Busca a borda esquerda do leito de café (após a trena e viga lateral)
-    x_start_idx = 0
-    for x in range(int(0.02 * ws), int(0.25 * ws)):
-        if smooth_col_s[x] > 100:
-            x_start_idx = x
-            break
-    x_start_idx = max(x_start_idx + 1, int(0.065 * ws))
-
-    # Busca a borda direita do leito de café (antes da viga lateral direita)
-    x_end_idx = ws - 1
-    for x in range(ws - int(0.02 * ws), int(0.75 * ws), -1):
-        if smooth_col_s[x] > 100:
-            x_end_idx = x
-            break
-    x_end_idx = min(x_end_idx - 1, int(0.925 * ws))
-
-    x_min = int(x_start_idx / ws * w_img)
-    x_max = int(x_end_idx / ws * w_img)
-
-    # 3. Detecção de ripas divisórias intermediárias de madeira (Sobel-X)
-    sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
-    c1, c2 = int(0.25 * ws), int(0.75 * ws)
-    row_sx_var = np.var(sobel_x[:, c1:c2], axis=1)
-
-    active_vars = row_sx_var[row_start:row_end]
-    med_var = float(np.median(active_vars)) if len(active_vars) > 0 else 50000.0
-
-    slat_ranges: list[tuple[int, int]] = []
-    in_slat = False
-    slat_start = 0
-
-    for ys in range(row_start + 10, row_end - 10):
-        if row_sx_var[ys] < 0.40 * med_var:
-            if not in_slat:
-                in_slat = True
-                slat_start = ys
-        else:
-            if in_slat:
-                in_slat = False
-                if (ys - slat_start) >= 6:
-                    y_slat_min = int(slat_start / hs * h_img) - int(0.008 * h_img)
-                    y_slat_max = int(ys / hs * h_img) + int(0.008 * h_img)
-                    slat_ranges.append((y_slat_min, y_slat_max))
-
-    if in_slat and (row_end - 10 - slat_start) >= 6:
-        y_slat_min = int(slat_start / hs * h_img) - int(0.008 * h_img)
-        y_slat_max = int((row_end - 10) / hs * h_img) + int(0.008 * h_img)
-        slat_ranges.append((y_slat_min, y_slat_max))
-
-    return (x_min, y_min, x_max, y_max), slat_ranges
-
-
 def compute_grid_coordinates(min_v: int, max_v: int, sz: int, st: int) -> list[int]:
     """Gera coordenadas de janelas garantindo cobertura 100% até a última borda."""
     coords = []
@@ -173,20 +76,18 @@ def run_inference(
     draw_style: str = "boxes",  # Modo Bounding Boxes
     box_thickness: int = 2,
 ) -> dict[str, Any]:
-    """Executa a inferência completa sobre a imagem, refinando maturação e gerando anotações."""
+    """Executa a inferência completa sobre a imagem inteira sem cortes de Y.
+
+    Diferencia com precisão um grão de café de tocos de madeira, ripas,
+    vigas e chão utilizando classificador Machine Learning treinado
+    com base na curvatura esférica 3D e assinaturas espectrais.
+    """
     model = get_model()
     h_img, w_img = image_bgr.shape[:2]
 
-    # Delimitar ROI automática da bandeja e detectar ripas de madeira
-    (x_min, y_min, x_max, y_max), slat_ranges = segment_tray_and_slats(image_bgr)
-    logger.info(
-        "ROI leito de cafe: X=[%d, %d], Y=[%d, %d] | Ripas divisórias detectadas: %s",
-        x_min,
-        x_max,
-        y_min,
-        y_max,
-        slat_ranges,
-    )
+    # Varredura completa da imagem de ponta a ponta (sem cortes artificiais de Y)
+    y_min, y_max = int(h_img * 0.01), int(h_img * 0.99)
+    x_min, x_max = int(w_img * 0.01), int(w_img * 0.99)
 
     tops = compute_grid_coordinates(y_min, y_max, tile_size, stride)
     lefts = compute_grid_coordinates(x_min, x_max, tile_size, stride)
@@ -250,67 +151,68 @@ def run_inference(
         )
 
         if len(indices) > 0:
+            # Pré-computa mapas de gradiente e HSV uma única vez
+            maps = precompute_image_maps(image_bgr)
             classifier = ColorClassifier(color_ranges=DEFAULT_COLOR_RANGES)
 
+            # Extração de características de cada caixa para Machine Learning
+            features_list: list[list[float]] = []
+            box_indices: list[int] = []
+
             for idx in indices.flatten():
+                gx1, gy1, gx2, gy2 = map(int, all_raw_boxes[idx])
+                cw, ch = gx2 - gx1, gy2 - gy1
+                if cw < 6 or ch < 6:
+                    continue
+
+                x1_c, x2_c = max(0, gx1), min(w_img, gx2)
+                y1_c, y2_c = max(0, gy1), min(h_img, gy2)
+
+                feat = extract_grain_features(
+                    maps["gray"][y1_c:y2_c, x1_c:x2_c],
+                    maps["hsv"][y1_c:y2_c, x1_c:x2_c],
+                    maps["gx"][y1_c:y2_c, x1_c:x2_c],
+                    maps["gy"][y1_c:y2_c, x1_c:x2_c],
+                    all_scores[idx],
+                )
+                if feat is not None:
+                    features_list.append(feat)
+                    box_indices.append(idx)
+
+            # Classificação por Machine Learning: Grão de Café (True) vs Madeira/Fundo (False)
+            is_coffee_list = classify_candidates(features_list)
+
+            for i, is_coffee in enumerate(is_coffee_list):
+                if not is_coffee:
+                    # Descartado como madeira, toco, ripa ou chão pelo modelo ML
+                    continue
+
+                idx = box_indices[i]
                 gx1, gy1, gx2, gy2 = all_raw_boxes[idx]
-                bw = gx2 - gx1
-                bh = gy2 - gy1
-                cy = (gy1 + gy2) / 2
-                cx = (gx1 + gx2) / 2
+                cid = all_classes[idx]
 
-                # Filtro 1: Descartar caixas fora dos limites estritos do leito de cafe
-                if cx < x_min or cx > x_max or cy < y_min or cy > y_max:
-                    continue
-
-                # Filtro 2: Descartar caixas nas ripas de madeira divisórias
-                in_slat = False
-                for s_min, s_max in slat_ranges:
-                    if s_min <= cy <= s_max:
-                        in_slat = True
-                        break
-                if in_slat:
-                    continue
-
-                # Filtro 3: Descartar formatos anômalos (não elipsoides/esféricos)
-                aspect_ratio = bw / max(1.0, bh)
-                if aspect_ratio < 0.45 or aspect_ratio > 2.2:
-                    continue
-
-                # Filtro 4: Refinamento espectral HSV e rejeição de madeira / chão / trena
-                y1_c, y2_c = max(0, int(gy1)), min(h_img, int(gy2))
                 x1_c, x2_c = max(0, int(gx1)), min(w_img, int(gx2))
+                y1_c, y2_c = max(0, int(gy1)), min(h_img, int(gy2))
                 crop_grain = image_bgr[y1_c:y2_c, x1_c:x2_c]
 
-                if crop_grain.size == 0:
-                    continue
+                if crop_grain.size > 0:
+                    hsv_grain = cv2.cvtColor(crop_grain, cv2.COLOR_BGR2HSV)
+                    med_h = float(np.median(hsv_grain[:, :, 0]))
+                    med_s = float(np.median(hsv_grain[:, :, 1]))
+                    med_v = float(np.median(hsv_grain[:, :, 2]))
 
-                hsv_grain = cv2.cvtColor(crop_grain, cv2.COLOR_BGR2HSV)
-                med_h = float(np.median(hsv_grain[:, :, 0]))
-                med_s = float(np.median(hsv_grain[:, :, 1]))
-                med_v = float(np.median(hsv_grain[:, :, 2]))
+                    matched_cid: int | None = None
+                    for cr in classifier.color_ranges:
+                        if (
+                            cr.h_min <= med_h <= cr.h_max
+                            and cr.s_min <= med_s <= cr.s_max
+                            and cr.v_min <= med_v <= cr.v_max
+                        ):
+                            matched_cid = cr.class_id
+                            break
 
-                # Rejeição de chão de asfalto e madeira acinzentada
-                if med_s < 30.0 and med_v > 38.0:
-                    continue
-
-                matched_cid: int | None = None
-                for cr in classifier.color_ranges:
-                    if (
-                        cr.h_min <= med_h <= cr.h_max
-                        and cr.s_min <= med_s <= cr.s_max
-                        and cr.v_min <= med_v <= cr.v_max
-                    ):
-                        matched_cid = cr.class_id
-                        break
-
-                if matched_cid is not None:
-                    cid = matched_cid
-                else:
-                    # Se não bate com nenhuma faixa de maturação e tem saturação baixa com baixa confiança, descartar
-                    if all_scores[idx] < 0.12 and med_s < 35.0:
-                        continue
-                    cid = all_classes[idx]
+                    if matched_cid is not None:
+                        cid = matched_cid
 
                 cname = CLASS_NAMES.get(cid, "desconhecido")
                 if cname in counts:
@@ -321,7 +223,7 @@ def run_inference(
                     "class_name": cname,
                     "confidence": round(all_scores[idx], 3),
                     "bbox": [int(gx1), int(gy1), int(gx2), int(gy2)],
-                    "center": [int(cx), int(cy)],
+                    "center": [int((gx1 + gx2) / 2), int((gy1 + gy2) / 2)],
                 })
 
     total_graos = len(detections)

@@ -49,6 +49,82 @@ def get_model() -> YOLO:
     return _CACHED_MODEL
 
 
+def segment_tray_and_slats(
+    image_bgr: NDArray[np.uint8],
+) -> tuple[tuple[int, int, int, int], list[tuple[int, int]]]:
+    """Segmenta automaticamente os limites do leito de café (ROI) e detecta ripas divisórias de madeira.
+
+    Elimina:
+    - O chão de asfalto/concreto acima e abaixo da bandeja
+    - As vigas laterais de madeira e a fita métrica/trena
+    - As ripas horizontais de madeira que dividem os compartimentos
+    """
+    h_img, w_img = image_bgr.shape[:2]
+    target_w = 540
+    target_h = int(h_img * target_w / w_img)
+    small = cv2.resize(image_bgr, (target_w, target_h))
+    hs, ws = small.shape[:2]
+
+    hsv_s = cv2.cvtColor(small, cv2.COLOR_BGR2HSV)
+    gray_s = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+
+    # 1. Delimitar leito de café por saturação e brilho característicos dos frutos Arara
+    coffee_pixels = ((hsv_s[:, :, 1] > 35) & (hsv_s[:, :, 2] > 35)).astype(np.uint8) * 255
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 25))
+    dense = cv2.morphologyEx(coffee_pixels, cv2.MORPH_CLOSE, kernel)
+
+    row_density = np.mean(dense > 0, axis=1)
+    col_density = np.mean(dense > 0, axis=0)
+
+    y_active = np.where(row_density > 0.30)[0]
+    x_active = np.where(col_density > 0.30)[0]
+
+    y_min = int((y_active[0] / hs) * h_img) if len(y_active) > 0 else int(0.18 * h_img)
+    y_max = int((y_active[-1] / hs) * h_img) if len(y_active) > 0 else int(0.98 * h_img)
+    x_min = int((x_active[0] / ws) * w_img) if len(x_active) > 0 else int(0.05 * w_img)
+    x_max = int((x_active[-1] / ws) * w_img) if len(x_active) > 0 else int(0.95 * w_img)
+
+    # Margens de segurança para garantir exclusão do chão e vigas externas
+    y_min = max(y_min + int(0.015 * h_img), int(0.18 * h_img))
+    y_max = min(y_max, int(0.985 * h_img))
+    x_min = max(x_min + int(0.015 * w_img), int(0.05 * w_img))
+    x_max = min(x_max - int(0.015 * w_img), int(0.95 * w_img))
+
+    # 2. Detectar ripas horizontais divisórias internas de madeira
+    sobel_x = cv2.Sobel(gray_s, cv2.CV_64F, 1, 0, ksize=3)
+    c1, c2 = int(0.20 * ws), int(0.80 * ws)
+    row_sx_var = np.var(sobel_x[:, c1:c2], axis=1)
+
+    y1_s = int(y_min / h_img * hs)
+    y2_s = int(y_max / h_img * hs)
+    active_vars = row_sx_var[y1_s:y2_s]
+    med_var = float(np.median(active_vars)) if len(active_vars) > 0 else 50000.0
+
+    slat_ranges: list[tuple[int, int]] = []
+    in_slat = False
+    slat_start = 0
+
+    for ys in range(y1_s + 15, y2_s - 15):
+        if row_sx_var[ys] < 0.38 * med_var:
+            if not in_slat:
+                in_slat = True
+                slat_start = ys
+        else:
+            if in_slat:
+                in_slat = False
+                if (ys - slat_start) >= 8:
+                    y_slat_min = int(slat_start / hs * h_img) - int(0.006 * h_img)
+                    y_slat_max = int(ys / hs * h_img) + int(0.006 * h_img)
+                    slat_ranges.append((y_slat_min, y_slat_max))
+
+    if in_slat and (y2_s - 15 - slat_start) >= 8:
+        y_slat_min = int(slat_start / hs * h_img) - int(0.006 * h_img)
+        y_slat_max = int((y2_s - 15) / hs * h_img) + int(0.006 * h_img)
+        slat_ranges.append((y_slat_min, y_slat_max))
+
+    return (x_min, y_min, x_max, y_max), slat_ranges
+
+
 def compute_grid_coordinates(min_v: int, max_v: int, sz: int, st: int) -> list[int]:
     """Gera coordenadas de janelas garantindo cobertura 100% até a última borda."""
     coords = []
@@ -75,11 +151,16 @@ def run_inference(
     model = get_model()
     h_img, w_img = image_bgr.shape[:2]
 
-    # Delimitar ROI completa da bandeja
-    y_min = int(h_img * 0.02)
-    y_max = int(h_img * 0.98)
-    x_min = int(w_img * 0.02)
-    x_max = int(w_img * 0.98)
+    # Delimitar ROI automática da bandeja e detectar ripas de madeira
+    (x_min, y_min, x_max, y_max), slat_ranges = segment_tray_and_slats(image_bgr)
+    logger.info(
+        "ROI leito de cafe: X=[%d, %d], Y=[%d, %d] | Ripas divisórias detectadas: %s",
+        x_min,
+        x_max,
+        y_min,
+        y_max,
+        slat_ranges,
+    )
 
     tops = compute_grid_coordinates(y_min, y_max, tile_size, stride)
     lefts = compute_grid_coordinates(x_min, x_max, tile_size, stride)
@@ -147,27 +228,59 @@ def run_inference(
 
             for idx in indices.flatten():
                 gx1, gy1, gx2, gy2 = all_raw_boxes[idx]
-                cid = all_classes[idx]
+                bw = gx2 - gx1
+                bh = gy2 - gy1
+                cy = (gy1 + gy2) / 2
+                cx = (gx1 + gx2) / 2
 
-                # Refinamento espectral HSV do grão individual
+                # Filtro 1: Descartar caixas nas ripas de madeira divisórias
+                in_slat = False
+                for s_min, s_max in slat_ranges:
+                    if s_min <= cy <= s_max:
+                        in_slat = True
+                        break
+                if in_slat:
+                    continue
+
+                # Filtro 2: Descartar formatos anômalos (não elipsoides/esféricos)
+                aspect_ratio = bw / max(1.0, bh)
+                if aspect_ratio < 0.45 or aspect_ratio > 2.2:
+                    continue
+
+                # Filtro 3: Refinamento espectral HSV e rejeição de madeira / chão / trena
                 y1_c, y2_c = max(0, int(gy1)), min(h_img, int(gy2))
                 x1_c, x2_c = max(0, int(gx1)), min(w_img, int(gx2))
                 crop_grain = image_bgr[y1_c:y2_c, x1_c:x2_c]
 
-                if crop_grain.size > 0:
-                    hsv_grain = cv2.cvtColor(crop_grain, cv2.COLOR_BGR2HSV)
-                    med_h = np.median(hsv_grain[:, :, 0])
-                    med_s = np.median(hsv_grain[:, :, 1])
-                    med_v = np.median(hsv_grain[:, :, 2])
+                if crop_grain.size == 0:
+                    continue
 
-                    for cr in classifier.color_ranges:
-                        if (
-                            cr.h_min <= med_h <= cr.h_max
-                            and cr.s_min <= med_s <= cr.s_max
-                            and cr.v_min <= med_v <= cr.v_max
-                        ):
-                            cid = cr.class_id
-                            break
+                hsv_grain = cv2.cvtColor(crop_grain, cv2.COLOR_BGR2HSV)
+                med_h = float(np.median(hsv_grain[:, :, 0]))
+                med_s = float(np.median(hsv_grain[:, :, 1]))
+                med_v = float(np.median(hsv_grain[:, :, 2]))
+
+                # Rejeição de chão de asfalto e madeira acinzentada
+                if med_s < 28.0 and med_v > 40.0:
+                    continue
+
+                matched_cid: int | None = None
+                for cr in classifier.color_ranges:
+                    if (
+                        cr.h_min <= med_h <= cr.h_max
+                        and cr.s_min <= med_s <= cr.s_max
+                        and cr.v_min <= med_v <= cr.v_max
+                    ):
+                        matched_cid = cr.class_id
+                        break
+
+                if matched_cid is not None:
+                    cid = matched_cid
+                else:
+                    # Se não bate com nenhuma faixa de maturação e tem saturação baixa com baixa confiança, descartar
+                    if all_scores[idx] < 0.12 and med_s < 35.0:
+                        continue
+                    cid = all_classes[idx]
 
                 cname = CLASS_NAMES.get(cid, "desconhecido")
                 if cname in counts:
@@ -178,7 +291,7 @@ def run_inference(
                     "class_name": cname,
                     "confidence": round(all_scores[idx], 3),
                     "bbox": [int(gx1), int(gy1), int(gx2), int(gy2)],
-                    "center": [int((gx1 + gx2) / 2), int((gy1 + gy2) / 2)],
+                    "center": [int(cx), int(cy)],
                 })
 
     total_graos = len(detections)

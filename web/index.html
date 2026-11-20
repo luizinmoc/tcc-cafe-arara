@@ -1,699 +1,912 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Café Arara AI — Visão Computacional & Maturação</title>
+  <title>Café Arara AI — Dashboard de Maturação e Colheita</title>
   
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#fbf7ee',
-              100: '#f5ecda',
-              500: '#d97706',
-              600: '#b45309',
-              900: '#451a03',
-            },
-            stage: {
-              verde: '#10b981',
-              amarelo: '#facc15',
-              cereja: '#eab308',
-              passado: '#f97316',
-              seco: '#78350f',
-            }
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- React 18 & ReactDOM -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Babel Standalone para JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --amber: #f59e0b;
+      --verde: #10b981;
+      --amarelo: #facc15;
+      --cereja: #eab308;
+      --passado: #f97316;
+      --seco: #854d0e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: #0b0f19;
-      color: #e2e8f0;
+      background-color: var(--bg);
+      color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-    .glass {
-      background: rgba(17, 24, 39, 0.75);
+    /* Layout */
+    header {
+      background: rgba(15, 23, 42, 0.85);
       backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 1rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .logo-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #d97706, #fbbf24);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
+    }
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .tag {
+      font-size: 0.68rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      background: rgba(245, 158, 11, 0.15);
+      color: #fde68a;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      font-weight: 600;
+    }
+    .brand-sub { font-size: 0.75rem; color: var(--text-muted); }
+    .status-badges { display: flex; gap: 0.6rem; align-items: center; }
+    .badge-pill {
+      background: rgba(30, 41, 59, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
     }
-    .glass-card {
-      background: rgba(30, 41, 59, 0.6);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
+    .pulse-dot {
       width: 8px;
       height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
     }
-    ::-webkit-scrollbar-track {
+
+    /* KPI Grid */
+    main { flex: 1; padding: 1.5rem; }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-left: 4px solid var(--amber);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+    }
+    .kpi-title { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .kpi-value { font-size: 1.7rem; font-weight: 800; color: #f8fafc; margin: 0.25rem 0; font-feature-settings: "tnum"; }
+    .kpi-footer { font-size: 0.72rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+    .kpi-footer strong { color: #f8fafc; }
+
+    /* Main 2-column workspace */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 980px) {
+      .workspace-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Left: Viewer */
+    .viewer-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      height: 620px;
+    }
+    .viewer-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid var(--card-border);
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .btn-group {
+      display: flex;
       background: #0f172a;
+      border-radius: 8px;
+      padding: 2px;
+      border: 1px solid rgba(255,255,255,0.06);
     }
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 4px;
+    .btn-toggle {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.15s;
     }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
+    .btn-toggle.active {
+      background: #d97706;
+      color: #fff;
+      font-weight: 600;
+    }
+    .zoom-ctrls { display: flex; align-items: center; gap: 0.35rem; }
+    .btn-sm {
+      background: #1e293b;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+    .btn-sm:hover { background: #334155; }
+
+    .canvas-container {
+      flex: 1;
+      background: #060911;
+      border-radius: 10px;
+      margin: 0.85rem 0;
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .canvas-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 6px;
+      transition: transform 0.15s ease-out;
+      transform-origin: center center;
+    }
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(6, 9, 17, 0.85);
+      backdrop-filter: blur(6px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      z-index: 10;
+    }
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 4px solid #f59e0b;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Right: Controls & Diagnostics */
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .card-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+    .form-group label { font-size: 0.75rem; font-weight: 600; color: #cbd5e1; display: flex; justify-content: space-between; }
+    .form-select, .form-input {
+      background: #0f172a;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 0.55rem 0.75rem;
+      color: #f8fafc;
+      font-size: 0.78rem;
+      outline: none;
+      width: 100%;
+    }
+    .form-select:focus, .form-input:focus { border-color: var(--amber); }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+    }
+    .range-input {
+      width: 100%;
+      accent-color: var(--amber);
+      cursor: pointer;
+    }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      cursor: pointer;
+      user-select: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      color: #0b0f19;
+      border: none;
+      padding: 0.8rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);
+      transition: all 0.15s;
+      width: 100%;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #b45309, #d97706);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: #1e293b;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #e2e8f0;
+      padding: 0.55rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s;
+    }
+    .btn-secondary:hover { background: #334155; }
+
+    /* Diagnostic Card */
+    .diag-box {
+      border-radius: 8px;
+      padding: 0.85rem;
+      border: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.75rem;
+      line-height: 1.45;
+    }
+    .diag-header { font-weight: 800; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.35rem; }
+
+    /* SVG Donut Chart */
+    .chart-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem 0;
+      position: relative;
+    }
+    .donut-svg {
+      width: 180px;
+      height: 180px;
+      transform: rotate(-90deg);
+    }
+    .donut-circle-bg {
+      fill: none;
+      stroke: #1e293b;
+      stroke-width: 24;
+    }
+    .donut-segment {
+      fill: none;
+      stroke-width: 24;
+      transition: stroke-dasharray 0.5s ease-out;
+    }
+    .donut-center-text {
+      position: absolute;
+      text-align: center;
+      pointer-events: none;
+    }
+    .donut-center-num { font-size: 1.3rem; font-weight: 800; color: #f8fafc; }
+    .donut-center-sub { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; }
+
+    /* Legend */
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      color: #cbd5e1;
+    }
+    .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+    /* Bottom: Continuous Learning Station */
+    .bottom-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .bottom-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .btn-learn {
+      background: #059669;
+      color: #fff;
+      border: none;
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.15s;
+    }
+    .btn-learn:hover { background: #047857; }
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.72rem; text-align: left; }
+    th { background: rgba(15, 23, 42, 0.7); color: var(--text-muted); padding: 0.6rem 0.85rem; font-weight: 600; text-transform: uppercase; }
+    td { padding: 0.55rem 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.04); font-family: monospace; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    footer {
+      border-top: 1px solid var(--card-border);
+      padding: 1rem;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
     }
   </style>
 </head>
-<body class="min-h-screen">
-  <div id="root"></div>
+<body>
 
-  <!-- React Application Script -->
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+  <!-- Top Header -->
+  <header>
+    <div class="container header-content">
+      <div class="brand">
+        <div class="logo-badge">☕</div>
+        <div>
+          <div class="brand-title">
+            <span>Café Arara AI</span>
+            <span class="tag">TCC Deep Learning</span>
+          </div>
+          <div class="brand-sub">Classificação e Contagem Automática de Maturação (5 Estágios)</div>
+        </div>
+      </div>
 
-    // Definição das classes de maturação do Café Arara
-    const CLASSES_INFO = {
-      verde: { label: 'Verde (Imaturo)', color: '#10b981', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400' },
-      amarelo: { label: 'Amarelo (Em Maturação)', color: '#facc15', bg: 'bg-yellow-400/10', border: 'border-yellow-400/30', text: 'text-yellow-400' },
-      cereja: { label: 'Cereja (Ponto Ideal ★)', color: '#eab308', bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400' },
-      passado: { label: 'Passado (Sobremaduro)', color: '#f97316', bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400' },
-      seco: { label: 'Seco / Preto', color: '#a16207', bg: 'bg-amber-900/20', border: 'border-amber-900/40', text: 'text-amber-600' },
+      <div class="status-badges">
+        <div class="badge-pill">
+          <div class="pulse-dot"></div>
+          <span>YOLOv8: <strong id="lbl-version" style="color:var(--amber)">v1.0</strong></span>
+        </div>
+        <div class="badge-pill">
+          <span>Ciclos Fine-Tuning: <strong id="lbl-cycles" style="color:#10b981">0</strong></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container">
+    
+    <!-- KPI Row -->
+    <div class="kpi-grid">
+      <div class="kpi-card" style="border-left-color: var(--amber);">
+        <div class="kpi-title">Total de Frutos</div>
+        <div class="kpi-value" id="val-total">—</div>
+        <div class="kpi-footer"><span>Cobertura</span> <strong>100% Bandeja</strong></div>
+      </div>
+
+      <div class="kpi-card" style="border-left-color: var(--verde);">
+        <div class="kpi-title">Verde (Imaturo)</div>
+        <div class="kpi-value" id="val-verde" style="color:var(--verde);">—</div>
+        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-verde">0%</strong></div>
+      </div>
+
+      <div class="kpi-card" style="border-left-color: var(--amarelo);">
+        <div class="kpi-title">Amarelo (Maturação)</div>
+        <div class="kpi-value" id="val-amarelo" style="color:var(--amarelo);">—</div>
+        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-amarelo">0%</strong></div>
+      </div>
+
+      <div class="kpi-card" style="border-left-color: var(--cereja);">
+        <div class="kpi-title">Cereja (Ideal ★)</div>
+        <div class="kpi-value" id="val-cereja" style="color:var(--cereja);">—</div>
+        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-cereja">0%</strong></div>
+      </div>
+
+      <div class="kpi-card" style="border-left-color: var(--passado);">
+        <div class="kpi-title">Passado (Sobremaduro)</div>
+        <div class="kpi-value" id="val-passado" style="color:var(--passado);">—</div>
+        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-passado">0%</strong></div>
+      </div>
+
+      <div class="kpi-card" style="border-left-color: var(--seco);">
+        <div class="kpi-title">Seco / Preto</div>
+        <div class="kpi-value" id="val-seco" style="color:#d97706;">—</div>
+        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-seco">0%</strong></div>
+      </div>
+    </div>
+
+    <!-- Workspace -->
+    <div class="workspace-grid">
+      
+      <!-- Left: Visualizer -->
+      <div class="viewer-panel">
+        <div class="viewer-toolbar">
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Modo:</span>
+            <div class="btn-group">
+              <button class="btn-toggle active" id="btn-mode-dots" onclick="setDrawMode('dots')">Pontos Centrais</button>
+              <button class="btn-toggle" id="btn-mode-boxes" onclick="setDrawMode('boxes')">Bounding Boxes</button>
+              <button class="btn-toggle" id="btn-mode-both" onclick="setDrawMode('both')">Ambos</button>
+            </div>
+          </div>
+
+          <div class="zoom-ctrls">
+            <button class="btn-sm" onclick="adjustZoom(-0.2)">🔍 -</button>
+            <span id="lbl-zoom" style="font-size:0.75rem; color:var(--text-muted); width:45px; text-align:center;">100%</span>
+            <button class="btn-sm" onclick="adjustZoom(0.2)">🔍 +</button>
+            <button class="btn-sm" onclick="resetZoom()" title="Redefinir">↺</button>
+          </div>
+        </div>
+
+        <div class="canvas-container" id="canvas-box">
+          <div id="loader" class="loading-overlay" style="display:none;">
+            <div class="spinner"></div>
+            <div style="font-size:0.85rem; font-weight:700; color:var(--amber);">Processando grade de alta resolução...</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Inferência YOLOv8 e calibração de cor dos grãos</div>
+          </div>
+
+          <img id="img-display" src="" alt="Café Arara Análise" style="display:none;" />
+          <div id="empty-state" style="text-align:center; padding:2rem; color:var(--text-muted);">
+            <div style="font-size:3rem; margin-bottom:0.5rem; opacity:0.4;">🌱</div>
+            <div style="font-size:0.9rem; font-weight:600; color:#cbd5e1;">Nenhuma imagem analisada no momento</div>
+            <div style="font-size:0.75rem; color:#64748b; margin-top:0.3rem;">Selecione uma foto do experimento ao lado e clique em Analisar.</div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--text-muted);">
+          <span>Imagem: <strong id="lbl-img-name" style="color:#f8fafc;">Nenhuma</strong></span>
+          <span>Resolução Nativa: <strong id="lbl-img-res" style="color:#f8fafc;">—</strong></span>
+        </div>
+      </div>
+
+      <!-- Right: Controls -->
+      <div class="controls-panel">
+        
+        <!-- Controls Card -->
+        <div class="card">
+          <div class="card-title">⚡ Parâmetros de Inferência</div>
+
+          <div class="form-group">
+            <label>
+              <span>Amostras do Experimento</span>
+              <span style="color:var(--amber); font-family:monospace;">15 Fotos 4K</span>
+            </label>
+            <select id="sel-sample" class="form-select" onchange="onSampleChange()">
+              <option value="">Carregando amostras...</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label><span>Ou enviar nova imagem</span></label>
+            <input type="file" id="file-upload" accept="image/*" class="form-input" onchange="onFileUploaded()" />
+          </div>
+
+          <div class="slider-row">
+            <div class="form-group">
+              <label><span>Confiança</span> <span id="lbl-conf" style="color:var(--amber); font-family:monospace;">0.04</span></label>
+              <input type="range" id="rng-conf" min="0.01" max="0.50" step="0.01" value="0.04" class="range-input" oninput="document.getElementById('lbl-conf').innerText = this.value" />
+            </div>
+
+            <div class="form-group">
+              <label><span>Tam. Ponto</span> <span id="lbl-dot" style="color:var(--amber); font-family:monospace;">4px</span></label>
+              <input type="range" id="rng-dot" min="2" max="8" step="1" value="4" class="range-input" oninput="document.getElementById('lbl-dot').innerText = this.value + 'px'" />
+            </div>
+          </div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="chk-auto-learn" checked />
+            <span><strong style="color:var(--amber);">Aprendizado Ativo:</strong> auto-refinar rede a cada teste</span>
+          </label>
+
+          <button class="btn-primary" id="btn-run" onclick="runAnalysis()">
+            🚀 Analisar Imagem & Contabilizar
+          </button>
+        </div>
+
+        <!-- Diagnostic Card -->
+        <div class="card" style="flex:1;">
+          <div class="card-title">📊 Diagnóstico da Maturação</div>
+
+          <div id="diag-container" class="diag-box" style="display:none;">
+            <div class="diag-header" id="diag-header">● Ponto Ideal de Colheita</div>
+            <div id="diag-desc" style="color:#cbd5e1;">Aguardando execução...</div>
+          </div>
+
+          <!-- Native SVG Donut Chart -->
+          <div class="chart-container" id="chart-box" style="display:none;">
+            <svg class="donut-svg" viewBox="0 0 100 100">
+              <circle class="donut-circle-bg" cx="50" cy="50" r="38"></circle>
+              <!-- 5 Segmentos dinâmicos -->
+              <circle id="seg-verde" class="donut-segment" stroke="var(--verde)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
+              <circle id="seg-amarelo" class="donut-segment" stroke="var(--amarelo)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
+              <circle id="seg-cereja" class="donut-segment" stroke="var(--cereja)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
+              <circle id="seg-passado" class="donut-segment" stroke="var(--passado)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
+              <circle id="seg-seco" class="donut-segment" stroke="var(--seco)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
+            </svg>
+            <div class="donut-center-text">
+              <div class="donut-center-num" id="donut-total">0</div>
+              <div class="donut-center-sub">Grãos</div>
+            </div>
+          </div>
+
+          <div class="legend-grid" id="chart-legend" style="display:none;">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--verde);"></div><span>Verde</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--amarelo);"></div><span>Amarelo</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--cereja);"></div><span>Cereja (Ideal)</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--passado);"></div><span>Passado</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--seco);"></div><span>Seco</span></div>
+          </div>
+
+          <button class="btn-secondary" id="btn-export-csv" onclick="exportCSV()" style="display:none;">
+            📥 Baixar Relatório da Análise (CSV)
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bottom: Continuous Learning -->
+    <div class="bottom-panel">
+      <div class="bottom-header">
+        <div>
+          <div style="font-size:0.95rem; font-weight:800; color:#f8fafc; display:flex; align-items:center; gap:0.4rem;">
+            <span>🧠 Estação de Aprendizado Contínuo (Machine Learning)</span>
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">
+            Ajuste fino incremental com congelamento de camadas convolucionais (freeze=10) sem perda de conhecimento prévio.
+          </div>
+        </div>
+
+        <button class="btn-learn" id="btn-force-learn" onclick="forceFineTuning()">
+          <span>⚡ Forçar Ciclo de Aperfeiçoamento</span>
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Versão do Modelo</th>
+              <th>Data e Hora</th>
+              <th>Épocas</th>
+              <th>Tempo de Treino</th>
+              <th>Dispositivo</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-history">
+            <tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--text-muted);">Carregando histórico...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    Trabalho de Conclusão de Curso (TCC) — Visão Computacional Aplicada à Maturação do Café Arara • 2026
+  </footer>
+
+  <script>
+    let currentResult = null;
+    let currentDrawMode = 'dots';
+    let currentZoom = 1;
+
+    window.onload = function() {
+      fetchStatus();
+      fetchSamples();
     };
 
-    function App() {
-      // Estado de status do sistema
-      const [systemStatus, setSystemStatus] = useState(null);
-      const [samples, setSamples] = useState([]);
-      const [history, setHistory] = useState([]);
-
-      // Controles de inferência
-      const [selectedSample, setSelectedSample] = useState('');
-      const [uploadedFile, setUploadedFile] = useState(null);
-      const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
-      const [confidence, setConfidence] = useState(0.04);
-      const [iou, setIou] = useState(0.65);
-      const [drawStyle, setDrawStyle] = useState('dots');
-      const [dotSize, setDotSize] = useState(4);
-      const [autoLearn, setAutoLearn] = useState(true);
-
-      // Estado de carregamento e resultado
-      const [analyzing, setAnalyzing] = useState(false);
-      const [learning, setLearning] = useState(false);
-      const [result, setResult] = useState(null);
-      const [zoomLevel, setZoomLevel] = useState(1);
-
-      const chartRef = useRef(null);
-      const chartInstance = useRef(null);
-      const fileInputRef = useRef(null);
-
-      // Carregar status e amostras ao iniciar
-      useEffect(() => {
-        fetchStatus();
-        fetchSamples();
-        fetchHistory();
-      }, []);
-
-      const fetchStatus = async () => {
-        try {
-          const res = await fetch('/api/status');
-          const data = await res.json();
-          setSystemStatus(data);
-        } catch (err) {
-          console.error('Falha ao carregar status:', err);
-        }
-      };
-
-      const fetchSamples = async () => {
-        try {
-          const res = await fetch('/api/samples');
-          const data = await res.json();
-          setSamples(data.samples || []);
-          if (data.samples && data.samples.length > 0) {
-            setSelectedSample(data.samples[0].name);
-          }
-        } catch (err) {
-          console.error('Falha ao carregar amostras:', err);
-        }
-      };
-
-      const fetchHistory = async () => {
-        try {
-          const res = await fetch('/api/history');
-          const data = await res.json();
-          setHistory(data.history || []);
-        } catch (err) {
-          console.error('Falha ao carregar histórico:', err);
-        }
-      };
-
-      // Atualizar gráfico de rosca quando os resultados mudarem
-      useEffect(() => {
-        if (!result || !chartRef.current) return;
-
-        if (chartInstance.current) {
-          chartInstance.current.destroy();
-        }
-
-        const counts = result.counts || {};
-        const labels = ['Verde', 'Amarelo', 'Cereja (Ideal)', 'Passado', 'Seco'];
-        const values = [
-          counts.verde || 0,
-          counts.amarelo || 0,
-          counts.cereja || 0,
-          counts.passado || 0,
-          counts.seco || 0,
-        ];
-        const colors = ['#10b981', '#facc15', '#eab308', '#f97316', '#78350f'];
-
-        const ctx = chartRef.current.getContext('2d');
-        chartInstance.current = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: labels,
-            datasets: [{
-              data: values,
-              backgroundColor: colors,
-              borderColor: '#0f172a',
-              borderWidth: 2,
-              hoverOffset: 6
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                position: 'bottom',
-                labels: { color: '#94a3b8', font: { size: 11 }, padding: 12 }
-              }
-            },
-            cutout: '68%'
-          }
-        });
-      }, [result]);
-
-      // Executar Inferência
-      const handleRunAnalysis = async () => {
-        setAnalyzing(true);
-        const formData = new FormData();
-        formData.append('confidence', confidence);
-        formData.append('iou', iou);
-        formData.append('style', drawStyle);
-        formData.append('dot_size', dotSize);
-        formData.append('auto_learn', autoLearn ? 'true' : 'false');
-
-        if (uploadedFile) {
-          formData.append('file', uploadedFile);
-        } else if (selectedSample) {
-          formData.append('sample_name', selectedSample);
-        } else {
-          alert('Selecione uma imagem ou amostra do experimento.');
-          setAnalyzing(false);
-          return;
-        }
-
-        try {
-          const res = await fetch('/api/analyze', {
-            method: 'POST',
-            body: formData,
-          });
-          const data = await res.json();
-          if (data.error) {
-            alert('Erro: ' + data.error);
-          } else {
-            setResult(data);
-            fetchStatus();
-            fetchHistory();
-          }
-        } catch (err) {
-          alert('Erro de comunicação com o servidor: ' + err.message);
-        } finally {
-          setAnalyzing(false);
-        }
-      };
-
-      // Disparar ciclo manual de continuous learning
-      const handleManualLearning = async () => {
-        if (!confirm('Deseja iniciar um ciclo de aperfeiçoamento incremental dos pesos da rede neural?')) return;
-        setLearning(true);
-        try {
-          const res = await fetch('/api/learn', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ epochs: 3 })
-          });
-          const data = await res.json();
-          if (data.status === 'sucesso') {
-            alert(`Aprendizado concluído com sucesso! Nova versão ativa: ${data.details.new_version}`);
-            fetchStatus();
-          } else {
-            alert('Falha: ' + data.message);
-          }
-        } catch (err) {
-          alert('Erro ao disparar fine-tuning: ' + err.message);
-        } finally {
-          setLearning(false);
-        }
-      };
-
-      // Exportar resultados para CSV
-      const handleExportCSV = () => {
-        if (!result) return;
-        const counts = result.counts;
-        const ratios = result.ratios;
-        const csvContent = "data:text/csv;charset=utf-8," +
-          "Classe,Quantidade,Percentual\n" +
-          `Verde,${counts.verde},${ratios.verde}%\n` +
-          `Amarelo,${counts.amarelo},${ratios.amarelo}%\n` +
-          `Cereja (Ideal),${counts.cereja},${ratios.cereja}%\n` +
-          `Passado,${counts.passado},${ratios.passado}%\n` +
-          `Seco,${counts.seco},${ratios.seco}%\n` +
-          `Total,${result.total_graos},100%`;
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `analise_maturacao_${Date.now()}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      };
-
-      return (
-        <div className="flex flex-col min-h-screen">
-          {/* Top Navbar */}
-          <header className="glass sticky top-0 z-50 px-6 py-4 border-b border-slate-800">
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-amber-500/20">
-                  ☕
-                </div>
-                <div>
-                  <h1 className="text-lg font-bold text-slate-100 flex items-center space-x-2">
-                    <span>Café Arara AI</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                      TCC Deep Learning
-                    </span>
-                  </h1>
-                  <p className="text-xs text-slate-400">Classificação e Contagem Automática de Maturação (5 Estágios)</p>
-                </div>
-              </div>
-
-              {/* Status Badges */}
-              <div className="flex items-center space-x-3 text-xs">
-                <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span className="text-slate-300">YOLOv8:</span>
-                  <span className="font-bold text-amber-400">{systemStatus?.model_version || 'v1.0'}</span>
-                </div>
-
-                <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-300">
-                  <span>Ciclos Fine-Tuning:</span>
-                  <span className="font-bold text-emerald-400">{systemStatus?.total_fine_tunings ?? 0}</span>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          {/* Main Layout */}
-          <main className="flex-1 max-w-7xl mx-auto w-full p-6 space-y-6">
-            
-            {/* KPI Cards (Metricas das 5 Classes) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {/* Card Total */}
-              <div className="glass-card rounded-xl p-4 flex flex-col justify-between border-l-4 border-l-amber-500">
-                <span className="text-xs uppercase tracking-wider text-slate-400 font-medium">Total de Frutos</span>
-                <div className="text-2xl font-black text-slate-100 mt-1">
-                  {result ? result.total_graos.toLocaleString('pt-BR') : '—'}
-                </div>
-                <span className="text-[11px] text-slate-400 mt-1">100% Cobertura</span>
-              </div>
-
-              {/* 5 Classes */}
-              {Object.entries(CLASSES_INFO).map(([key, info]) => {
-                const count = result?.counts?.[key] ?? 0;
-                const ratio = result?.ratios?.[key] ?? 0;
-                return (
-                  <div key={key} className={`glass-card rounded-xl p-4 flex flex-col justify-between border-l-4`} style={{ borderLeftColor: info.color }}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-300 truncate">{info.label}</span>
-                    </div>
-                    <div className="text-2xl font-bold mt-1" style={{ color: info.color }}>
-                      {result ? count.toLocaleString('pt-BR') : '—'}
-                    </div>
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
-                      <span>Proporção:</span>
-                      <span className="font-bold text-slate-200">{result ? `${ratio}%` : '0%'}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Area de Trabalho: Visualizador + Controles */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
-              {/* Coluna Esquerda: Visualizador da Imagem (8 colunas) */}
-              <div className="lg:col-span-8 flex flex-col space-y-4">
-                <div className="glass rounded-xl p-4 flex flex-col h-[580px] relative overflow-hidden">
-                  
-                  {/* Barra de Ferramentas Superior do Visualizador */}
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs font-semibold text-slate-300">Modo de Visualização:</span>
-                      <div className="flex bg-slate-900 rounded-lg p-0.5 border border-slate-700/60 text-xs">
-                        <button
-                          onClick={() => setDrawStyle('dots')}
-                          className={`px-3 py-1 rounded-md transition ${drawStyle === 'dots' ? 'bg-amber-600 text-white font-medium' : 'text-slate-400 hover:text-white'}`}
-                        >
-                          Pontos
-                        </button>
-                        <button
-                          onClick={() => setDrawStyle('boxes')}
-                          className={`px-3 py-1 rounded-md transition ${drawStyle === 'boxes' ? 'bg-amber-600 text-white font-medium' : 'text-slate-400 hover:text-white'}`}
-                        >
-                          Bounding Boxes
-                        </button>
-                        <button
-                          onClick={() => setDrawStyle('both')}
-                          className={`px-3 py-1 rounded-md transition ${drawStyle === 'both' ? 'bg-amber-600 text-white font-medium' : 'text-slate-400 hover:text-white'}`}
-                        >
-                          Ambos
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Controles de Zoom */}
-                    <div className="flex items-center space-x-2 text-xs">
-                      <button 
-                        onClick={() => setZoomLevel(prev => Math.max(0.6, prev - 0.2))}
-                        className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200"
-                        title="Diminuir Zoom"
-                      >
-                        🔍 -
-                      </button>
-                      <span className="text-slate-400 w-12 text-center">{Math.round(zoomLevel * 100)}%</span>
-                      <button 
-                        onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.2))}
-                        className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200"
-                        title="Aumentar Zoom"
-                      >
-                        🔍 +
-                      </button>
-                      <button 
-                        onClick={() => setZoomLevel(1)}
-                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
-                        title="Redefinir Zoom"
-                      >
-                        ↺
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Canvas / Imagem Renderizada */}
-                  <div className="flex-1 overflow-auto flex items-center justify-center p-2 relative bg-slate-950/60 rounded-lg mt-3">
-                    {analyzing && (
-                      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center space-y-3">
-                        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-sm font-medium text-amber-300">Processando grade de alta resolução e NMS global...</p>
-                        <span className="text-xs text-slate-400">Classificando cada grão por espectrometria HSV</span>
-                      </div>
-                    )}
-
-                    {result?.annotated_image_b64 ? (
-                      <img
-                        src={result.annotated_image_b64}
-                        alt="Imagem Anotada do Café Arara"
-                        style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center center', transition: 'transform 0.15s ease-out' }}
-                        className="max-h-full max-w-full object-contain rounded shadow-2xl"
-                      />
-                    ) : imagePreviewUrl ? (
-                      <img
-                        src={imagePreviewUrl}
-                        alt="Pré-visualização"
-                        style={{ transform: `scale(${zoomLevel})` }}
-                        className="max-h-full max-w-full object-contain opacity-60 rounded"
-                      />
-                    ) : (
-                      <div className="text-center p-8 text-slate-500 flex flex-col items-center space-y-3">
-                        <span className="text-5xl opacity-40">🌱</span>
-                        <p className="text-sm text-slate-400">Nenhuma imagem analisada no momento.</p>
-                        <p className="text-xs text-slate-500 max-w-sm">
-                          Escolha uma das amostras do experimento no menu ao lado ou carregue uma imagem para contagem automática.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Rodapé do Visualizador com Metadados */}
-                  {result && (
-                    <div className="pt-2 text-xs flex items-center justify-between text-slate-400">
-                      <span>Imagem: <strong className="text-slate-200">{result.image_name}</strong> ({result.dimensoes?.largura}×{result.dimensoes?.altura}px)</span>
-                      <span>Total Detectado: <strong className="text-amber-400">{result.total_graos} grãos</strong></span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Coluna Direita: Controles & Diagnóstico (4 colunas) */}
-              <div className="lg:col-span-4 flex flex-col space-y-4">
-                
-                {/* Card de Configuração & Execução */}
-                <div className="glass rounded-xl p-5 space-y-4">
-                  <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
-                    <span>⚡ Parâmetros de Inferência</span>
-                  </h3>
-
-                  {/* Seletor de Amostra Pré-carregada */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs text-slate-300 font-medium flex items-center justify-between">
-                      <span>Amostras do Experimento (Drive)</span>
-                      <span className="text-[10px] text-amber-400 font-mono">15 Fotos 4K</span>
-                    </label>
-                    <select
-                      value={selectedSample}
-                      onChange={(e) => {
-                        setSelectedSample(e.target.value);
-                        setUploadedFile(null);
-                        setImagePreviewUrl(`/api/sample/${e.target.value}`);
-                      }}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                    >
-                      {samples.map((s) => (
-                        <option key={s.name} value={s.name}>
-                          {s.name} ({s.size_mb} MB)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Upload de Arquivo Alternativo */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs text-slate-300 font-medium">Ou enviar nova foto</label>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      accept="image/*"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          const file = e.target.files[0];
-                          setUploadedFile(file);
-                          setImagePreviewUrl(URL.createObjectURL(file));
-                          setSelectedSample('');
-                        }
-                      }}
-                      className="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Sliders: Confiança e Tamanho */}
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-slate-400">
-                        <span>Confiança</span>
-                        <span className="text-amber-400 font-mono">{confidence}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0.01"
-                        max="0.50"
-                        step="0.01"
-                        value={confidence}
-                        onChange={(e) => setConfidence(parseFloat(e.target.value))}
-                        className="w-full accent-amber-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-slate-400">
-                        <span>Tam. Ponto</span>
-                        <span className="text-amber-400 font-mono">{dotSize}px</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="2"
-                        max="8"
-                        step="1"
-                        value={dotSize}
-                        onChange={(e) => setDotSize(parseInt(e.target.value))}
-                        className="w-full accent-amber-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Checkbox de Aprendizado Ativo */}
-                  <div className="pt-1">
-                    <label className="flex items-center space-x-2.5 text-xs text-slate-300 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={autoLearn}
-                        onChange={(e) => setAutoLearn(e.target.checked)}
-                        className="rounded border-slate-700 text-amber-500 focus:ring-amber-500 h-4 w-4 bg-slate-900"
-                      />
-                      <span className="flex-1">
-                        <strong className="text-amber-300">Aprendizado Contínuo Ativo</strong>: Aperfeiçoar neurônios automaticamente a cada teste
-                      </span>
-                    </label>
-                  </div>
-
-                  {/* Botão de Análise Principal */}
-                  <button
-                    onClick={handleRunAnalysis}
-                    disabled={analyzing}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-50"
-                  >
-                    <span>{analyzing ? 'Processando Grade YOLOv8...' : '🚀 Analisar Imagem & Contabilizar'}</span>
-                  </button>
-                </div>
-
-                {/* Card de Diagnóstico Agronômico & Gráfico */}
-                <div className="glass rounded-xl p-5 space-y-4 flex-1 flex flex-col justify-between">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-2">
-                      📊 Diagnóstico da Maturação
-                    </h3>
-
-                    {result ? (
-                      <div className="space-y-3">
-                        <div 
-                          className="p-3 rounded-lg border text-xs"
-                          style={{ backgroundColor: `${result.badge_cor}15`, borderColor: `${result.badge_cor}40` }}
-                        >
-                          <div className="font-bold flex items-center space-x-1.5 mb-1" style={{ color: result.badge_cor }}>
-                            <span>●</span>
-                            <span>{result.status_colheita}</span>
-                          </div>
-                          <p className="text-slate-300 leading-relaxed">{result.recomendacao}</p>
-                        </div>
-
-                        {/* Grafico Donut */}
-                        <div className="h-44 w-full relative">
-                          <canvas ref={chartRef}></canvas>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="h-44 flex items-center justify-center text-xs text-slate-500 text-center">
-                        Execute a análise para visualizar o diagnóstico e distribuição.
-                      </div>
-                    )}
-                  </div>
-
-                  {result && (
-                    <button
-                      onClick={handleExportCSV}
-                      className="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 flex items-center justify-center space-x-2 transition"
-                    >
-                      <span>📥 Baixar Relatório da Análise (CSV)</span>
-                    </button>
-                  )}
-                </div>
-
-              </div>
-            </div>
-
-            {/* Painel Inferior: Aprendizado Contínuo & Auditoria do Modelo */}
-            <div className="glass rounded-xl p-5 space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-slate-800 gap-3">
-                <div>
-                  <h3 className="text-base font-bold text-slate-100 flex items-center space-x-2">
-                    <span>🧠 Estação de Aprendizado Contínuo (Machine Learning)</span>
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Fine-Tuning com congelamento de camadas convolucionais para aprimoramento contínuo sem perda catastrófica.
-                  </p>
-                </div>
-
-                <button
-                  onClick={handleManualLearning}
-                  disabled={learning}
-                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition flex items-center space-x-2 disabled:opacity-50 shadow-md shadow-emerald-500/20"
-                >
-                  <span>{learning ? 'Executando Fine-Tuning...' : '⚡ Forçar Ciclo de Aperfeiçoamento'}</span>
-                </button>
-              </div>
-
-              {/* Tabela do Histórico de Versões */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="text-[11px] uppercase bg-slate-900/60 text-slate-400 border-b border-slate-800">
-                    <tr>
-                      <th className="py-2.5 px-3">Versão do Modelo</th>
-                      <th className="py-2.5 px-3">Data e Hora</th>
-                      <th className="py-2.5 px-3">Épocas</th>
-                      <th className="py-2.5 px-3">Tempo de Treino</th>
-                      <th className="py-2.5 px-3">Dispositivo</th>
-                      <th className="py-2.5 px-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60 font-mono text-[11px]">
-                    {systemStatus?.history && systemStatus.history.length > 0 ? (
-                      systemStatus.history.map((h, i) => (
-                        <tr key={i} className="hover:bg-slate-800/30">
-                          <td className="py-2 px-3 font-bold text-amber-400">{h.version}</td>
-                          <td className="py-2 px-3 text-slate-400">{h.timestamp}</td>
-                          <td className="py-2 px-3">{h.epochs} épocas</td>
-                          <td className="py-2 px-3 text-emerald-400">{h.elapsed_seconds}s</td>
-                          <td className="py-2 px-3 uppercase text-slate-400">{h.device}</td>
-                          <td className="py-2 px-3">
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px]">
-                              {h.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="6" className="py-4 text-center text-slate-500">
-                          Nenhum ciclo de aprendizado registrado ainda. Versão inicial ativa.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </main>
-
-          {/* Footer */}
-          <footer className="glass border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-500">
-            <p>Trabalho de Conclusão de Curso (TCC) — Visão Computacional Aplicada à Maturação do Café Arara • 2026</p>
-          </footer>
-        </div>
-      );
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        document.getElementById('lbl-version').innerText = data.model_version || 'v1.0';
+        document.getElementById('lbl-cycles').innerText = data.total_fine_tunings || 0;
+        renderHistoryTable(data.history || []);
+      } catch (e) {
+        console.error('Erro status:', e);
+      }
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    async function fetchSamples() {
+      try {
+        const res = await fetch('/api/samples');
+        const data = await res.json();
+        const sel = document.getElementById('sel-sample');
+        sel.innerHTML = '';
+        (data.samples || []).forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.name;
+          opt.innerText = `${s.name} (${s.size_mb} MB)`;
+          sel.appendChild(opt);
+        });
+      } catch (e) {
+        console.error('Erro samples:', e);
+      }
+    }
+
+    function renderHistoryTable(history) {
+      const tbody = document.getElementById('tbl-history');
+      if (!history || history.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1rem; color:var(--text-muted);">Nenhum ciclo incremental registrado. Versão base ativa.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = history.map(h => `
+        <tr>
+          <td><strong style="color:var(--amber);">${h.version}</strong></td>
+          <td style="color:var(--text-muted);">${h.timestamp}</td>
+          <td>${h.epochs} épocas</td>
+          <td style="color:#10b981;">${h.elapsed_seconds}s</td>
+          <td style="text-transform:uppercase;">${h.device}</td>
+          <td><span style="background:rgba(16,185,129,0.2); color:#6ee7b7; padding:2px 8px; border-radius:999px; font-size:0.65rem;">${h.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function onSampleChange() {
+      document.getElementById('file-upload').value = '';
+    }
+
+    function onFileUploaded() {
+      document.getElementById('sel-sample').value = '';
+    }
+
+    function setDrawMode(mode) {
+      currentDrawMode = mode;
+      document.querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
+      document.getElementById(`btn-mode-${mode}`).classList.add('active');
+      if (currentResult) {
+        runAnalysis();
+      }
+    }
+
+    function adjustZoom(delta) {
+      currentZoom = Math.min(3, Math.max(0.6, currentZoom + delta));
+      applyZoom();
+    }
+    function resetZoom() {
+      currentZoom = 1;
+      applyZoom();
+    }
+    function applyZoom() {
+      document.getElementById('lbl-zoom').innerText = `${Math.round(currentZoom * 100)}%`;
+      document.getElementById('img-display').style.transform = `scale(${currentZoom})`;
+    }
+
+    async function runAnalysis() {
+      const loader = document.getElementById('loader');
+      const btn = document.getElementById('btn-run');
+      loader.style.display = 'flex';
+      btn.disabled = true;
+
+      const fd = new FormData();
+      fd.append('confidence', document.getElementById('rng-conf').value);
+      fd.append('dot_size', document.getElementById('rng-dot').value);
+      fd.append('style', currentDrawMode);
+      fd.append('auto_learn', document.getElementById('chk-auto-learn').checked ? 'true' : 'false');
+
+      const fileInput = document.getElementById('file-upload');
+      if (fileInput.files && fileInput.files[0]) {
+        fd.append('file', fileInput.files[0]);
+      } else {
+        const sampleName = document.getElementById('sel-sample').value;
+        if (!sampleName) {
+          alert('Selecione uma amostra ou envie uma foto.');
+          loader.style.display = 'none';
+          btn.disabled = false;
+          return;
+        }
+        fd.append('sample_name', sampleName);
+      }
+
+      try {
+        const res = await fetch('/api/analyze', { method: 'POST', body: fd });
+        const data = await res.json();
+
+        if (data.error) {
+          alert('Erro: ' + data.error);
+        } else {
+          currentResult = data;
+          renderResults(data);
+          fetchStatus();
+        }
+      } catch (e) {
+        alert('Erro ao comunicar com o servidor: ' + e.message);
+      } finally {
+        loader.style.display = 'none';
+        btn.disabled = false;
+      }
+    }
+
+    function renderResults(data) {
+      // KPIs
+      document.getElementById('val-total').innerText = Number(data.total_graos).toLocaleString('pt-BR');
+      document.getElementById('val-verde').innerText = Number(data.counts.verde || 0).toLocaleString('pt-BR');
+      document.getElementById('val-amarelo').innerText = Number(data.counts.amarelo || 0).toLocaleString('pt-BR');
+      document.getElementById('val-cereja').innerText = Number(data.counts.cereja || 0).toLocaleString('pt-BR');
+      document.getElementById('val-passado').innerText = Number(data.counts.passado || 0).toLocaleString('pt-BR');
+      document.getElementById('val-seco').innerText = Number(data.counts.seco || 0).toLocaleString('pt-BR');
+
+      document.getElementById('pct-verde').innerText = `${data.ratios.verde || 0}%`;
+      document.getElementById('pct-amarelo').innerText = `${data.ratios.amarelo || 0}%`;
+      document.getElementById('pct-cereja').innerText = `${data.ratios.cereja || 0}%`;
+      document.getElementById('pct-passado').innerText = `${data.ratios.passado || 0}%`;
+      document.getElementById('pct-seco').innerText = `${data.ratios.seco || 0}%`;
+
+      // Imagem
+      const img = document.getElementById('img-display');
+      img.src = data.annotated_image_b64;
+      img.style.display = 'block';
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('lbl-img-name').innerText = data.image_name;
+      document.getElementById('lbl-img-res').innerText = `${data.dimensoes.largura}×${data.dimensoes.altura}px`;
+
+      // Diagnóstico
+      const diag = document.getElementById('diag-container');
+      diag.style.display = 'block';
+      diag.style.backgroundColor = `${data.badge_cor}15`;
+      diag.style.borderColor = `${data.badge_cor}40`;
+      const header = document.getElementById('diag-header');
+      header.innerText = `● ${data.status_colheita}`;
+      header.style.color = data.badge_cor;
+      document.getElementById('diag-desc').innerText = data.recomendacao;
+
+      // SVG Donut Chart
+      renderDonut(data.counts, data.total_graos);
+      document.getElementById('chart-box').style.display = 'flex';
+      document.getElementById('chart-legend').style.display = 'grid';
+      document.getElementById('btn-export-csv').style.display = 'block';
+    }
+
+    function renderDonut(counts, total) {
+      document.getElementById('donut-total').innerText = total;
+      const circ = 2 * Math.PI * 38; // ~238.76
+
+      const order = ['verde', 'amarelo', 'cereja', 'passado', 'seco'];
+      let offset = 0;
+
+      order.forEach(k => {
+        const seg = document.getElementById(`seg-${k}`);
+        const count = counts[k] || 0;
+        const fraction = total > 0 ? count / total : 0;
+        const dash = fraction * circ;
+        seg.style.strokeDasharray = `${dash} ${circ - dash}`;
+        seg.style.strokeDashoffset = -offset;
+        offset += dash;
+      });
+    }
+
+    async function forceFineTuning() {
+      if (!confirm('Deseja iniciar um ciclo de aperfeiçoamento contínuo dos neurônios da rede neural?')) return;
+      const btn = document.getElementById('btn-force-learn');
+      btn.innerText = '⏳ Treinando...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/learn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ epochs: 3 })
+        });
+        const data = await res.json();
+        if (data.status === 'sucesso') {
+          alert(`Aprendizado concluído com sucesso! Nova versão ativa: ${data.details.new_version}`);
+          fetchStatus();
+        } else {
+          alert('Falha: ' + data.message);
+        }
+      } catch (e) {
+        alert('Erro ao disparar fine-tuning: ' + e.message);
+      } finally {
+        btn.innerText = '⚡ Forçar Ciclo de Aperfeiçoamento';
+        btn.disabled = false;
+      }
+    }
+
+    function exportCSV() {
+      if (!currentResult) return;
+      const c = currentResult.counts;
+      const r = currentResult.ratios;
+      const csv = "data:text/csv;charset=utf-8," +
+        "Classe,Contagem,Percentual\n" +
+        `Verde,${c.verde},${r.verde}%\n` +
+        `Amarelo,${c.amarelo},${r.amarelo}%\n` +
+        `Cereja (Ponto Ideal),${c.cereja},${r.cereja}%\n` +
+        `Passado,${c.passado},${r.passado}%\n` +
+        `Seco,${c.seco},${r.seco}%\n` +
+        `Total,${currentResult.total_graos},100%`;
+
+      const encoded = encodeURI(csv);
+      const a = document.createElement("a");
+      a.href = encoded;
+      a.download = `relatorio_maturacao_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   </script>
 </body>
 </html>

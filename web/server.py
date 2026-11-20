@@ -209,7 +209,19 @@ middleware = [
 
 app = Starlette(routes=routes, middleware=middleware)
 
+def _auto_open_browser():
+    import time
+    import webbrowser
+    time.sleep(1.8)
+    try:
+        webbrowser.open("http://localhost:8501")
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
+    import threading
+    threading.Thread(target=_auto_open_browser, daemon=True).start()
     print("========================================================================")
     print("   CAFÉ ARARA AI — SERVIDOR WEB INICIADO")
     print("   Acesse no navegador: http://localhost:8501")

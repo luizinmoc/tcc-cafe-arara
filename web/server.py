@@ -27,6 +27,7 @@ import cv2
 import numpy as np
 import uvicorn
 from starlette.applications import Starlette
+from starlette.background import BackgroundTask
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -118,9 +119,17 @@ async def handle_analyze(request: Request) -> JSONResponse:
         if not image_bytes:
             return JSONResponse({"error": "Nenhuma imagem foi enviada."}, status_code=400)
 
-        # Decodificar imagem OpenCV
+        # Decodificar imagem OpenCV com fallback para Pillow (suporta WebP, PNG transparente, EXIF, etc.)
         np_arr = np.frombuffer(image_bytes, np.uint8)
         img_bgr = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+        if img_bgr is None:
+            try:
+                from PIL import Image
+                pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+                img_bgr = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+            except Exception as dec_err:
+                logger.error("Falha ao decodificar imagem: %s", dec_err)
 
         if img_bgr is None:
             return JSONResponse({"error": "Arquivo de imagem corrompido ou formato inválido."}, status_code=400)
@@ -148,21 +157,22 @@ async def handle_analyze(request: Request) -> JSONResponse:
             confidence=confidence,
         )
 
-        # Se aprendizado ativo estiver ligado, agendar fine-tuning leve em background
-        learning_feedback = None
-        if auto_learn:
-            try:
-                # Rodar 1 ciclo rápido de aprendizado
-                learning_feedback = execute_continuous_fine_tuning(epochs=2, batch_size=8)
-            except Exception as e:
-                logger.warning("Falha no auto-aprendizado: %s", e)
-
         result["image_name"] = image_name
         result["auto_learn_triggered"] = auto_learn
-        if learning_feedback:
-            result["learning_feedback"] = learning_feedback
 
-        return JSONResponse(result)
+        # Se aprendizado ativo estiver ligado, agendar fine-tuning em background (sem travar a resposta)
+        bg_task: BackgroundTask | None = None
+        if auto_learn:
+            def _bg_finetune() -> None:
+                try:
+                    logger.info("Iniciando auto-aprendizado ativo em background...")
+                    execute_continuous_fine_tuning(epochs=2, batch_size=8)
+                except Exception as ex:
+                    logger.warning("Falha no auto-aprendizado em background: %s", ex)
+
+            bg_task = BackgroundTask(_bg_finetune)
+
+        return JSONResponse(result, background=bg_task)
 
     except Exception as e:
         logger.error("Erro durante análise: %s", e, exc_info=True)

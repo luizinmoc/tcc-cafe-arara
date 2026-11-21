@@ -147,15 +147,41 @@ def is_grain_heuristic(
 def classify_candidates(
     crops_features: list[list[float]],
 ) -> list[bool]:
-    """Classifica um lote de características candidatas como Grão de Café (True) ou Madeira/Fundo (False)."""
+    """Classifica um lote de características candidatas como Grão de Café (True) ou Madeira/Fundo (False).
+    
+    Protege contra falsos positivos de madeira na esteira/bandeja em confianças baixas,
+    ao mesmo tempo em que suporta fotos em close-up, fotos de internet e fotos de galho.
+    """
+    if len(crops_features) == 0:
+        return []
+
     clf = get_grain_classifier()
-    if clf is None or len(crops_features) == 0:
-        # Fallback heurístico
-        return [bool(f[0] >= 24.0 or f[3] >= 45.0) for f in crops_features]
+    results: list[bool] = []
 
-    X = np.array(crops_features)
-    # Probabilidade de ser grão de café (classe 1)
-    probs = clf.predict_proba(X)
-    is_coffee = probs[:, 1] >= 0.50
+    # Índices das características:
+    # 0: c2b, 1: min_d, 2: max_d, 3: rad, 4: s_med, 5: s_std, 6: v_med, 7: v_std,
+    # 8: h_med, 9: ar, 10: area, 11: border_std, 12: lap_v, 13: conf
 
-    return is_coffee.tolist()
+    for feat in crops_features:
+        c2b, min_d, max_d, rad, s_med, s_std, v_med, v_std, h_med, ar, area, border_std, lap_v, conf = feat
+
+        # 1. Detecções com boa confiança da rede neural (>= 0.20) e aspecto não-ripa
+        if conf >= 0.20 and (0.35 <= ar <= 2.8):
+            results.append(True)
+            continue
+
+        # 2. Frutos com saturação viva e aspecto arredondado (verde, amarelo, cereja ou passa)
+        if s_med >= 45.0 and (0.45 <= ar <= 2.2):
+            results.append(True)
+            continue
+
+        # 3. Frutos pequenos na bandeja coletiva (área <= 1500 px): usar modelo ML calibrado
+        if clf is not None and area <= 1500:
+            prob = float(clf.predict_proba([feat])[0, 1])
+            results.append(bool(prob >= 0.45))
+        else:
+            # 4. Caixas maiores (close-up) ou fallback heurístico
+            is_valid = (0.40 <= ar <= 2.5) and (c2b >= 10.0 or rad >= 25.0 or s_med >= 35.0)
+            results.append(bool(is_valid))
+
+    return results

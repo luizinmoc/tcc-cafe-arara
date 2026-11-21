@@ -56,13 +56,15 @@ def get_model() -> YOLO:
 
 def compute_grid_coordinates(min_v: int, max_v: int, sz: int, st: int) -> list[int]:
     """Gera coordenadas de janelas garantindo cobertura 100% até a última borda."""
+    if max_v - min_v <= sz:
+        return [max(0, min_v)]
     coords = []
     c = min_v
     while c + sz <= max_v:
         coords.append(c)
         c += st
     last_c = max_v - sz
-    if last_c not in coords and last_c >= min_v:
+    if last_c not in coords and last_c >= 0:
         coords.append(last_c)
     return sorted(list(set(coords)))
 
@@ -76,63 +78,100 @@ def run_inference(
     draw_style: str = "boxes",  # Modo Bounding Boxes
     box_thickness: int = 2,
 ) -> dict[str, Any]:
-    """Executa a inferência completa sobre a imagem inteira sem cortes de Y.
-
-    Diferencia com precisão um grão de café de tocos de madeira, ripas,
-    vigas e chão utilizando classificador Machine Learning treinado
-    com base na curvatura esférica 3D e assinaturas espectrais.
+    """Executa a inferência híbrida adaptativa sobre a imagem.
+    
+    1. Executa inferência na imagem completa (imgsz=640) para detectar frutos
+       de qualquer tamanho, em close-up, fotos de internet ou fotos de galho.
+    2. Para imagens de alta resolução (4K / bandejas coletivas), executa fatiamento
+       em grade (tiling) de alta densidade 1:1 para detectar milhares de micro-grãos.
+    3. Unifica e deduplica todas as propostas via NMS global.
+    4. Aplica o classificador morfológico de Machine Learning para rejeitar ripas, tocos e chão.
     """
     model = get_model()
     h_img, w_img = image_bgr.shape[:2]
-
-    # Varredura completa da imagem de ponta a ponta (sem cortes artificiais de Y)
-    y_min, y_max = int(h_img * 0.01), int(h_img * 0.99)
-    x_min, x_max = int(w_img * 0.01), int(w_img * 0.99)
-
-    tops = compute_grid_coordinates(y_min, y_max, tile_size, stride)
-    lefts = compute_grid_coordinates(x_min, x_max, tile_size, stride)
-
-    tiles: list[NDArray[np.uint8]] = []
-    offsets: list[tuple[int, int]] = []
-
-    for top in tops:
-        for left in lefts:
-            patch = image_bgr[top : top + tile_size, left : left + tile_size]
-            if patch.shape[0] == tile_size and patch.shape[1] == tile_size:
-                tiles.append(patch)
-                offsets.append((left, top))
 
     all_raw_boxes: list[list[float]] = []
     all_scores: list[float] = []
     all_classes: list[int] = []
 
-    # Inferência em lotes (batch inference)
-    batch_size = 8
-    for i in range(0, len(tiles), batch_size):
-        b_tiles = tiles[i : i + batch_size]
-        b_offsets = offsets[i : i + batch_size]
-
-        results = model.predict(
-            source=b_tiles,
-            imgsz=tile_size,
-            conf=confidence,
-            max_det=2000,
+    # ══════════════════════════════════════════════════════════════════════════
+    # PASSO 1: Inferência Global na Imagem Completa (Escala Global)
+    # Suporta qualquer resolução (fotos pequenas de internet, galho ou close-up)
+    # ══════════════════════════════════════════════════════════════════════════
+    full_conf = max(0.02, confidence)
+    try:
+        full_results = model.predict(
+            source=image_bgr,
+            imgsz=640,
+            conf=full_conf,
+            max_det=3000,
             verbose=False,
         )
-
-        for res, (off_x, off_y) in zip(results, b_offsets):
-            boxes = res.boxes
-            if boxes is None or len(boxes) == 0:
-                continue
-
-            for b in boxes:
+        if full_results and len(full_results) > 0 and full_results[0].boxes is not None:
+            for b in full_results[0].boxes:
                 bx1, by1, bx2, by2 = b.xyxy[0].cpu().numpy().tolist()
                 score = float(b.conf.item())
                 cid = int(b.cls.item())
-
-                all_raw_boxes.append([bx1 + off_x, by1 + off_y, bx2 + off_x, by2 + off_y])
+                all_raw_boxes.append([bx1, by1, bx2, by2])
                 all_scores.append(score)
                 all_classes.append(cid)
+    except Exception as e:
+        logger.warning("Falha no passe global da imagem: %s", e)
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PASSO 2: Fatiamento em Grade (Tiling) para Imagens de Alta Resolução
+    # Ativado quando a imagem tem dimensões suficientes para conter micro-grãos
+    # ══════════════════════════════════════════════════════════════════════════
+    if w_img >= 640 and h_img >= 640:
+        tops = compute_grid_coordinates(0, h_img, tile_size, stride)
+        lefts = compute_grid_coordinates(0, w_img, tile_size, stride)
+
+        tiles: list[NDArray[np.uint8]] = []
+        offsets: list[tuple[int, int]] = []
+
+        for top in tops:
+            for left in lefts:
+                patch = image_bgr[top : min(h_img, top + tile_size), left : min(w_img, left + tile_size)]
+                ph, pw = patch.shape[:2]
+                if ph < tile_size or pw < tile_size:
+                    patch = cv2.copyMakeBorder(
+                        patch, 0, tile_size - ph, 0, tile_size - pw, cv2.BORDER_REFLECT
+                    )
+                tiles.append(patch)
+                offsets.append((left, top))
+
+        # Inferência em lotes (batch inference)
+        batch_size = 8
+        for i in range(0, len(tiles), batch_size):
+            b_tiles = tiles[i : i + batch_size]
+            b_offsets = offsets[i : i + batch_size]
+
+            results = model.predict(
+                source=b_tiles,
+                imgsz=tile_size,
+                conf=confidence,
+                max_det=2000,
+                verbose=False,
+            )
+
+            for res, (off_x, off_y) in zip(results, b_offsets):
+                boxes = res.boxes
+                if boxes is None or len(boxes) == 0:
+                    continue
+
+                for b in boxes:
+                    bx1, by1, bx2, by2 = b.xyxy[0].cpu().numpy().tolist()
+                    score = float(b.conf.item())
+                    cid = int(b.cls.item())
+
+                    gx1 = min(w_img, max(0, bx1 + off_x))
+                    gy1 = min(h_img, max(0, by1 + off_y))
+                    gx2 = min(w_img, max(0, bx2 + off_x))
+                    gy2 = min(h_img, max(0, by2 + off_y))
+
+                    all_raw_boxes.append([gx1, gy1, gx2, gy2])
+                    all_scores.append(score)
+                    all_classes.append(cid)
 
     # NMS Global
     detections: list[dict[str, Any]] = []

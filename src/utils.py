@@ -36,55 +36,55 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Constantes — 5 Estágios de Maturação
+# Constantes — 5 Estágios de Maturação do Café Arara
 # ═══════════════════════════════════════════════════════════════════════════
 
 # Mapeamento de índice de classe → nome legível
 CLASS_NAMES: dict[int, str] = {
     0: "verde",
-    1: "amarelo",
-    2: "cereja",
-    3: "passado",
+    1: "cereja_1",
+    2: "cereja_2",
+    3: "passa",
     4: "seco",
 }
 
 # Nomes para exibição amigável no dashboard
 CLASS_DISPLAY_NAMES: dict[str, str] = {
-    "verde":   "Verde (Imaturo)",
-    "amarelo": "Amarelo (Em Maturação)",
-    "cereja":  "Cereja Amarelo (Ponto Ideal)",
-    "passado": "Passado (Seco Parcial)",
-    "seco":    "Seco (Passa/Seco)",
+    "verde":    "Verde (Imaturo)",
+    "cereja_1": "Cereja I (Em Maturação)",
+    "cereja_2": "Cereja II (Ápice da Qualidade ★)",
+    "passa":    "Passa (Ápice da Qualidade ★)",
+    "seco":     "Seco",
 }
 
 # Cores BGR para desenho no OpenCV (uma por classe)
 CLASS_COLORS_BGR_5: dict[int, tuple[int, int, int]] = {
-    0: (0, 160, 0),        # Verde
-    1: (0, 230, 230),      # Amarelo pálido (BGR)
-    2: (0, 215, 255),      # Amarelo vivo/dourado (BGR)
-    3: (15, 130, 180),     # Ocre/amarelo-escuro (BGR)
-    4: (40, 40, 40),       # Preto/marrom-escuro
+    0: (0, 160, 0),        # Verde (BGR)
+    1: (0, 230, 230),      # Cereja I - Amarelo (BGR)
+    2: (0, 215, 255),      # Cereja II - Dourado / Ápice (BGR)
+    3: (15, 110, 235),     # Passa - Laranja / Âmbar / Ápice (BGR)
+    4: (40, 40, 40),       # Seco - Marrom-escuro / Preto (BGR)
 }
 
 # Alias para compatibilidade
 CLASS_COLORS_BGR = CLASS_COLORS_BGR_5
 
-# Cores HEX para uso no Streamlit / HTML
+# Cores HEX para uso no HTML / Dashboard
 CLASS_COLORS_HEX: dict[int, str] = {
-    0: "#00A000",   # verde
-    1: "#E6E600",   # amarelo pálido
-    2: "#FFD700",   # cereja (amarelo vibrante / dourado)
-    3: "#B4820F",   # passado (ocre)
-    4: "#282828",   # seco (preto)
+    0: "#10b981",   # Verde
+    1: "#facc15",   # Cereja I
+    2: "#eab308",   # Cereja II (Ápice)
+    3: "#ea580c",   # Passa (Ápice)
+    4: "#78350f",   # Seco
 }
 
 # Emojis para exibição nos cards
 CLASS_EMOJIS: dict[int, str] = {
-    0: "🟢",   # verde
-    1: "🟡",   # amarelo
-    2: "🌟",   # cereja (ponto ideal)
-    3: "🟤",   # passado
-    4: "⚫",   # seco
+    0: "🟢",   # Verde
+    1: "🟡",   # Cereja I
+    2: "⭐",   # Cereja II (Ápice da Qualidade)
+    3: "🌟",   # Passa (Ápice da Qualidade)
+    4: "🟤",   # Seco
 }
 
 # Extensões de imagem suportadas

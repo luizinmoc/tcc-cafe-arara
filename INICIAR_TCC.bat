@@ -1,10 +1,10 @@
 @echo off
-title Cafe Arara AI - Dashboard TCC
+title Viabilidade da Visao Computacional - Cafe Arara (TCC)
 color 0A
 
 echo ========================================================================
-echo    CAFE ARARA AI - VISAO COMPUTACIONAL E APRENDIZADO CONTINUO (TCC)
-echo    Classificacao da Maturacao com Deep Learning YOLOv8 + Dashboard
+echo    VIABILIDADE DA VISAO COMPUTACIONAL NA CLASSIFICACAO MORFOLOGICA E
+echo    CONTAGEM DO NIVEL DE MATURACAO DO CAFE ARARA
 echo ========================================================================
 echo.
 

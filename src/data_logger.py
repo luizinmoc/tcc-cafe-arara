@@ -29,15 +29,16 @@ CSV_COLUMNS = [
     "imagem",
     "total_graos",
     "verde",
-    "amarelo",
-    "cereja_ideal",
-    "passado",
+    "cereja_1",
+    "cereja_2",
+    "passa",
     "seco",
     "pct_verde",
-    "pct_amarelo",
-    "pct_cereja_ideal",
-    "pct_passado",
+    "pct_cereja_1",
+    "pct_cereja_2",
+    "pct_passa",
     "pct_seco",
+    "pct_apice_qualidade",
     "confianca_minima",
     "modelo",
 ]
@@ -66,20 +67,33 @@ def record_count_session(
     timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     total_graos = sum(counts.values())
 
+    c1 = counts.get("cereja_1", counts.get("amarelo", 0))
+    c2 = counts.get("cereja_2", counts.get("cereja", 0))
+    cp = counts.get("passa", counts.get("passado", 0))
+    cv = counts.get("verde", 0)
+    cs = counts.get("seco", 0)
+
+    p1 = ratios.get("cereja_1", ratios.get("amarelo", 0.0))
+    p2 = ratios.get("cereja_2", ratios.get("cereja", 0.0))
+    pp = ratios.get("passa", ratios.get("passado", 0.0))
+    pv = ratios.get("verde", 0.0)
+    ps = ratios.get("seco", 0.0)
+
     record: dict[str, Any] = {
         "data_hora": timestamp_str,
         "imagem": Path(image_name).name,
         "total_graos": total_graos,
-        "verde": counts.get("verde", 0),
-        "amarelo": counts.get("amarelo", 0),
-        "cereja_ideal": counts.get("cereja_ideal", 0),
-        "passado": counts.get("passado", 0),
-        "seco": counts.get("seco", 0),
-        "pct_verde": round(ratios.get("verde", 0.0), 2),
-        "pct_amarelo": round(ratios.get("amarelo", 0.0), 2),
-        "pct_cereja_ideal": round(ratios.get("cereja_ideal", 0.0), 2),
-        "pct_passado": round(ratios.get("passado", 0.0), 2),
-        "pct_seco": round(ratios.get("seco", 0.0), 2),
+        "verde": cv,
+        "cereja_1": c1,
+        "cereja_2": c2,
+        "passa": cp,
+        "seco": cs,
+        "pct_verde": round(pv, 2),
+        "pct_cereja_1": round(p1, 2),
+        "pct_cereja_2": round(p2, 2),
+        "pct_passa": round(pp, 2),
+        "pct_seco": round(ps, 2),
+        "pct_apice_qualidade": round(p2 + pp, 2),
         "confianca_minima": confidence,
         "modelo": model_name,
     }

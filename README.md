@@ -1,4 +1,4 @@
-# ☕ Visão Computacional Aplicada à Identificação e Contagem Automática do Nível de Maturação do Café Arara
+# ☕ Viabilidade da Visão Computacional na Classificação Morfológica e Contagem do Nível de Maturação do Café Arara
 
 <p align="center">
   <img src="assets/banner_placeholder.png" alt="Banner do Projeto" width="720"/>
@@ -11,15 +11,19 @@
 
 ## 📋 Sobre o Projeto
 
-Trabalho de Conclusão de Curso que utiliza **Visão Computacional** com modelos de detecção **YOLOv8** para identificar, classificar e contabilizar automaticamente o nível de maturação dos frutos de café da variedade **Arara** — cuja particularidade botânica é que os frutos maduros apresentam coloração **amarelada**, e não vermelha como nas variedades tradicionais.
+Trabalho de Conclusão de Curso (TCC) investigando a **Viabilidade da Visão Computacional na Classificação Morfológica e Contagem do Nível de Maturação do Café Arara**. Utiliza modelos neurais **YOLOv8** associados a refinamento espectral morfológico e discriminador por **Machine Learning** (`ExtraTreesClassifier`) para diferenciar grãos de café de ripas de madeira, tocos, folhas e chão da esteira/bandeja.
 
-### Classes de Classificação
+A variedade botânica **Arara** apresenta particularidade na maturação: os frutos maduros possuem coloração **amarelada a âmbar**. No estudo agronômico, o **ápice da qualidade sensorial e do teor de açúcares (Brix)** situa-se na transição entre o estágio **Cereja II** e o estágio **Passa**.
 
-| Classe | Descrição | Cor Predominante |
-|---|---|---|
-| `cafe_amarelado` | Frutos maduros (ponto ideal de colheita) | Amarelo / Amarelo-alaranjado |
-| `cafe_verde` | Frutos imaturos (ainda em desenvolvimento) | Verde |
-| `cafe_preto` | Frutos secos / passados / defeituosos | Preto / Marrom-escuro |
+### Estágios de Maturação Analisados
+
+| Classe | Estágio | Descrição Agronômica | Relevância |
+|---|---|---|---|
+| `verde` | **Verde** | Frutos imaturos em desenvolvimento | Adstringência |
+| `cereja_1` | **Cereja I** | Início da maturação amarelada | Pré-pico |
+| `cereja_2` | **Cereja II** | Maturação plena amarela/âmbar | **Ápice da Qualidade ★** |
+| `passa` | **Passa** | Sobremaduração inicial com desidratação e pico de Brix | **Ápice da Qualidade ★** |
+| `seco` | **Seco** | Frutos secos, pretos ou desidratados tardios | Catação recomendada |
 
 ## 🏗️ Estrutura do Repositório
 

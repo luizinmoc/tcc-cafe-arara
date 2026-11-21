@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Café Arara AI — Dashboard de Maturação e Colheita</title>
+  <title>Viabilidade da Visão Computacional na Classificação Morfológica e Contagem do Nível de Maturação do Café Arara</title>
   
   <style>
     :root {
@@ -14,10 +14,10 @@
       --text-muted: #94a3b8;
       --amber: #f59e0b;
       --verde: #10b981;
-      --amarelo: #facc15;
-      --cereja: #eab308;
-      --passado: #f97316;
-      --seco: #854d0e;
+      --cereja1: #facc15;
+      --cereja2: #eab308;
+      --passa: #ea580c;
+      --seco: #78350f;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -466,10 +466,10 @@
         <div class="logo-badge">☕</div>
         <div>
           <div class="brand-title">
-            <span>Café Arara AI</span>
-            <span class="tag">TCC Deep Learning</span>
+            <span>Viabilidade da Visão Computacional</span>
+            <span class="tag">TCC Café Arara</span>
           </div>
-          <div class="brand-sub">Classificação e Contagem Automática de Maturação (5 Estágios)</div>
+          <div class="brand-sub">Classificação Morfológica e Contagem do Nível de Maturação do Café Arara</div>
         </div>
       </div>
 
@@ -502,26 +502,26 @@
         <div class="kpi-footer"><span>Proporção</span> <strong id="pct-verde">0%</strong></div>
       </div>
 
-      <div class="kpi-card" style="border-left-color: var(--amarelo);">
-        <div class="kpi-title">Amarelo (Maturação)</div>
-        <div class="kpi-value" id="val-amarelo" style="color:var(--amarelo);">—</div>
-        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-amarelo">0%</strong></div>
+      <div class="kpi-card" style="border-left-color: var(--cereja1);">
+        <div class="kpi-title">Cereja I (Início)</div>
+        <div class="kpi-value" id="val-cereja_1" style="color:var(--cereja1);">—</div>
+        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-cereja_1">0%</strong></div>
       </div>
 
-      <div class="kpi-card" style="border-left-color: var(--cereja);">
-        <div class="kpi-title">Cereja (Ideal ★)</div>
-        <div class="kpi-value" id="val-cereja" style="color:var(--cereja);">—</div>
-        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-cereja">0%</strong></div>
+      <div class="kpi-card" style="border-left-color: var(--cereja2); box-shadow: 0 0 10px rgba(234, 179, 8, 0.15);">
+        <div class="kpi-title">Cereja II (Ápice ★)</div>
+        <div class="kpi-value" id="val-cereja_2" style="color:var(--cereja2);">—</div>
+        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-cereja_2">0%</strong></div>
       </div>
 
-      <div class="kpi-card" style="border-left-color: var(--passado);">
-        <div class="kpi-title">Passado (Sobremaduro)</div>
-        <div class="kpi-value" id="val-passado" style="color:var(--passado);">—</div>
-        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-passado">0%</strong></div>
+      <div class="kpi-card" style="border-left-color: var(--passa); box-shadow: 0 0 10px rgba(234, 88, 12, 0.15);">
+        <div class="kpi-title">Passa (Ápice ★)</div>
+        <div class="kpi-value" id="val-passa" style="color:var(--passa);">—</div>
+        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-passa">0%</strong></div>
       </div>
 
       <div class="kpi-card" style="border-left-color: var(--seco);">
-        <div class="kpi-title">Seco / Preto</div>
+        <div class="kpi-title">Seco</div>
         <div class="kpi-value" id="val-seco" style="color:#d97706;">—</div>
         <div class="kpi-footer"><span>Proporção</span> <strong id="pct-seco">0%</strong></div>
       </div>
@@ -647,9 +647,9 @@
               <circle class="donut-circle-bg" cx="50" cy="50" r="38"></circle>
               <!-- 5 Segmentos dinâmicos -->
               <circle id="seg-verde" class="donut-segment" stroke="var(--verde)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
-              <circle id="seg-amarelo" class="donut-segment" stroke="var(--amarelo)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
-              <circle id="seg-cereja" class="donut-segment" stroke="var(--cereja)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
-              <circle id="seg-passado" class="donut-segment" stroke="var(--passado)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
+              <circle id="seg-cereja_1" class="donut-segment" stroke="var(--cereja1)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
+              <circle id="seg-cereja_2" class="donut-segment" stroke="var(--cereja2)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
+              <circle id="seg-passa" class="donut-segment" stroke="var(--passa)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
               <circle id="seg-seco" class="donut-segment" stroke="var(--seco)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
             </svg>
             <div class="donut-center-text">
@@ -660,9 +660,9 @@
 
           <div class="legend-grid" id="chart-legend" style="display:none;">
             <div class="legend-item"><div class="legend-dot" style="background:var(--verde);"></div><span>Verde</span></div>
-            <div class="legend-item"><div class="legend-dot" style="background:var(--amarelo);"></div><span>Amarelo</span></div>
-            <div class="legend-item"><div class="legend-dot" style="background:var(--cereja);"></div><span>Cereja (Ideal)</span></div>
-            <div class="legend-item"><div class="legend-dot" style="background:var(--passado);"></div><span>Passado</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--cereja1);"></div><span>Cereja I</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--cereja2);"></div><span>Cereja II (Ápice ★)</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--passa);"></div><span>Passa (Ápice ★)</span></div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--seco);"></div><span>Seco</span></div>
           </div>
 
@@ -713,7 +713,7 @@
   </main>
 
   <footer>
-    Trabalho de Conclusão de Curso (TCC) — Visão Computacional Aplicada à Maturação do Café Arara • 2026
+    Trabalho de Conclusão de Curso (TCC) — Viabilidade da Visão Computacional na Classificação Morfológica e Contagem do Nível de Maturação do Café Arara • 2026
   </footer>
 
   <script>
@@ -952,15 +952,15 @@
       // KPIs
       document.getElementById('val-total').innerText = Number(data.total_graos).toLocaleString('pt-BR');
       document.getElementById('val-verde').innerText = Number(data.counts.verde || 0).toLocaleString('pt-BR');
-      document.getElementById('val-amarelo').innerText = Number(data.counts.amarelo || 0).toLocaleString('pt-BR');
-      document.getElementById('val-cereja').innerText = Number(data.counts.cereja || 0).toLocaleString('pt-BR');
-      document.getElementById('val-passado').innerText = Number(data.counts.passado || 0).toLocaleString('pt-BR');
+      document.getElementById('val-cereja_1').innerText = Number(data.counts.cereja_1 ?? data.counts.amarelo ?? 0).toLocaleString('pt-BR');
+      document.getElementById('val-cereja_2').innerText = Number(data.counts.cereja_2 ?? data.counts.cereja ?? 0).toLocaleString('pt-BR');
+      document.getElementById('val-passa').innerText = Number(data.counts.passa ?? data.counts.passado ?? 0).toLocaleString('pt-BR');
       document.getElementById('val-seco').innerText = Number(data.counts.seco || 0).toLocaleString('pt-BR');
 
       document.getElementById('pct-verde').innerText = `${data.ratios.verde || 0}%`;
-      document.getElementById('pct-amarelo').innerText = `${data.ratios.amarelo || 0}%`;
-      document.getElementById('pct-cereja').innerText = `${data.ratios.cereja || 0}%`;
-      document.getElementById('pct-passado').innerText = `${data.ratios.passado || 0}%`;
+      document.getElementById('pct-cereja_1').innerText = `${data.ratios.cereja_1 ?? data.ratios.amarelo ?? 0}%`;
+      document.getElementById('pct-cereja_2').innerText = `${data.ratios.cereja_2 ?? data.ratios.cereja ?? 0}%`;
+      document.getElementById('pct-passa').innerText = `${data.ratios.passa ?? data.ratios.passado ?? 0}%`;
       document.getElementById('pct-seco').innerText = `${data.ratios.seco || 0}%`;
 
       // Exibir imagem anotada com Bounding Boxes
@@ -993,12 +993,13 @@
       document.getElementById('donut-total').innerText = total;
       const circ = 2 * Math.PI * 38; // ~238.76
 
-      const order = ['verde', 'amarelo', 'cereja', 'passado', 'seco'];
+      const order = ['verde', 'cereja_1', 'cereja_2', 'passa', 'seco'];
       let offset = 0;
 
       order.forEach(k => {
         const seg = document.getElementById(`seg-${k}`);
-        const count = counts[k] || 0;
+        if (!seg) return;
+        const count = counts[k] ?? (k === 'cereja_1' ? counts['amarelo'] : k === 'cereja_2' ? counts['cereja'] : k === 'passa' ? counts['passado'] : 0) ?? 0;
         const fraction = total > 0 ? count / total : 0;
         const dash = fraction * circ;
         seg.style.strokeDasharray = `${dash} ${circ - dash}`;
@@ -1038,13 +1039,20 @@
       if (!currentResult) return;
       const c = currentResult.counts;
       const r = currentResult.ratios;
+      const c1 = c.cereja_1 ?? c.amarelo ?? 0;
+      const r1 = r.cereja_1 ?? r.amarelo ?? 0;
+      const c2 = c.cereja_2 ?? c.cereja ?? 0;
+      const r2 = r.cereja_2 ?? r.cereja ?? 0;
+      const cp = c.passa ?? c.passado ?? 0;
+      const rp = r.passa ?? r.passado ?? 0;
+
       const csv = "data:text/csv;charset=utf-8," +
         "Classe,Contagem,Percentual\n" +
-        `Verde,${c.verde},${r.verde}%\n` +
-        `Amarelo,${c.amarelo},${r.amarelo}%\n` +
-        `Cereja (Ponto Ideal),${c.cereja},${r.cereja}%\n` +
-        `Passado,${c.passado},${r.passado}%\n` +
-        `Seco,${c.seco},${r.seco}%\n` +
+        `Verde,${c.verde || 0},${r.verde || 0}%\n` +
+        `Cereja I,${c1},${r1}%\n` +
+        `Cereja II (Apice da Qualidade),${c2},${r2}%\n` +
+        `Passa (Apice da Qualidade),${cp},${rp}%\n` +
+        `Seco,${c.seco || 0},${r.seco || 0}%\n` +
         `Total,${currentResult.total_graos},100%`;
 
       const encoded = encodeURI(csv);

@@ -136,7 +136,7 @@ def run_inference(
 
     # NMS Global
     detections: list[dict[str, Any]] = []
-    counts = {"verde": 0, "amarelo": 0, "cereja": 0, "passado": 0, "seco": 0}
+    counts = {"verde": 0, "cereja_1": 0, "cereja_2": 0, "passa": 0, "seco": 0}
 
     if all_raw_boxes:
         boxes_xywh = []
@@ -232,22 +232,38 @@ def run_inference(
         for k, v in counts.items()
     }
 
-    # Recomendação agronômica
-    pct_ideal = ratios.get("cereja", 0.0) + ratios.get("amarelo", 0.0)
-    if pct_ideal >= 75.0:
-        recomendacao = "Excelente ponto de colheita! Alta concentração de frutos maduros e cerejas."
-        status_colheita = "Ponto Ideal de Colheita ★"
+    # Recomendação agronômica: Ápice da qualidade está entre Cereja II e Passa
+    pct_apice = ratios.get("cereja_2", 0.0) + ratios.get("passa", 0.0)
+    pct_cereja_1 = ratios.get("cereja_1", 0.0)
+    pct_verde = ratios.get("verde", 0.0)
+    pct_seco = ratios.get("seco", 0.0)
+
+    if pct_apice >= 50.0:
+        recomendacao = (
+            "Lote no Ápice da Qualidade! Predomínio de frutos em Cereja II e Passa, "
+            "com máxima concentração de açúcares (grau Brix) e perfil ideal para cafés especiais."
+        )
+        status_colheita = "Ápice da Qualidade ★"
         badge_cor = "#10b981"
-    elif pct_ideal >= 50.0:
-        recomendacao = "Maturação moderada. Colheita seletiva recomendada nos próximos dias."
-        status_colheita = "Maturação Moderada"
+    elif (pct_apice + pct_cereja_1) >= 60.0:
+        recomendacao = (
+            "Excelente maturação. Alta concentração de frutos entre Cereja I e o Ápice (Cereja II e Passa). "
+            "Ponto muito favorável para colheita."
+        )
+        status_colheita = "Excelente Ponto de Colheita"
         badge_cor = "#f59e0b"
-    elif ratios.get("verde", 0.0) > 40.0:
-        recomendacao = "Lote predominantemente imaturo. Recomenda-se aguardar evolução fisiológica."
+    elif pct_verde > 35.0:
+        recomendacao = (
+            "Lote predominantemente imaturo (Verde). "
+            "Recomenda-se aguardar evolução fisiológica para atingir o ápice de qualidade."
+        )
         status_colheita = "Aguardar Maturação"
         badge_cor = "#3b82f6"
     else:
-        recomendacao = "Presença significativa de frutos passados/secos. Necessária catação prévia."
+        recomendacao = (
+            "Presença significativa de frutos secos. "
+            "Recomenda-se catação/separação prévia para evitar perda sensorial na bebida."
+        )
         status_colheita = "Catação Necessária"
         badge_cor = "#ef4444"
 

@@ -229,7 +229,8 @@ if __name__ == "__main__":
     import threading
     threading.Thread(target=_auto_open_browser, daemon=True).start()
     print("========================================================================")
-    print("   CAFÉ ARARA AI — SERVIDOR WEB INICIADO")
+    print("   VIABILIDADE DA VISÃO COMPUTACIONAL — CAFÉ ARARA")
+    print("   Classificação Morfológica e Contagem do Nível de Maturação")
     print("   Acesse no navegador: http://localhost:8501")
     print("========================================================================")
     uvicorn.run(app, host="127.0.0.1", port=8501, log_level="info")

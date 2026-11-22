@@ -181,10 +181,6 @@ Acesse `http://localhost:8501` no navegador. Na interface você poderá:
 | [NumPy](https://numpy.org/) | Computação numérica |
 | [Pillow](https://pillow.readthedocs.io/) | Carregamento e conversão de imagens |
 
-## 📝 Licença
-
-Este projeto está licenciado sob a licença MIT. Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
-
 ## 👤 Autor
 
 **Luiz Gustavo Souza Santos**

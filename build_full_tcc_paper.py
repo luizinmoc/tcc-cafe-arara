@@ -341,8 +341,8 @@ def build_paper():
     )
 
     add_p(
-        "A dinâmica fisiológica da mucilagem é o termômetro biológico da qualidade sensorial. A Figura 8 sintetiza a evolução do teor de sólidos solúveis "
-        "(grau Brix), da acidez titulável e do potencial sensorial SCA ao longo dos cinco estágios definidos neste trabalho: "
+        "A dinâmica fisiológica da mucilagem é o termômetro biológico da qualidade sensorial. A evolução do teor de sólidos solúveis "
+        "(grau Brix), da acidez titulável e do potencial sensorial SCA ao longo dos cinco estágios definidos neste trabalho caracteriza-se por: "
         "\n1. Verde: exocarpo verde rígido, mesocarpo fibroso sem açúcares solúveis (~10° Brix), alta concentração de ácidos clorogênicos livres e "
         "taninos adstringentes que conferem nota áspera e herbácea à bebida (< 70 pontos SCA); "
         "\n2. Cereja I: início da síntese de pigmentos amarelos com descoloração parcial da clorofila (~16° Brix), mucilagem em expansão e transição "
@@ -354,8 +354,6 @@ def build_paper():
         "\n5. Seco: dessecação avançada com endurecimento do pericarpo e escurecimento oxidativo (frutos pretos e boias tardios), com risco iminente de "
         "fermentação acética secundária e perda de sacarose por degradação microbiológica [6]."
     )
-
-    add_fig("fig4_curva_maturacao.png", "Figura 8. Curva fisiológica de acúmulo de sólidos solúveis (°Brix), acidez e pontuação sensorial SCA ao longo dos 5 estágios de maturação do Café Arara, delimitando a janela do Ápice da Qualidade.")
 
     add_subsec_head("B. Modelos Neurais Convolucionais e Arquitetura YOLOv8")
     add_p(
@@ -427,8 +425,6 @@ def build_paper():
         "textura linear unidirecional e gradiente convergente nulo. A modelagem matemática dessas diferenças fornece a base para um classificador de Machine "
         "Learning extremamente rápido e acurado."
     )
-
-    add_fig("fig3_morfologia.png", "Figura 5. Modelagem morfológica comparativa: (a) Fruto de café esférico 3D com curvatura convexa e vetores de gradiente radial Sobel convergentes (rad >= 25); (b) Superfície tabular de madeira com fibras unidirecionais planas.")
 
     add_subsec_head("E. Sistemas de Apoio à Decisão e Avaliação Ergonômica")
     add_p(
@@ -535,16 +531,14 @@ def build_paper():
         "HSV dos 5 estágios de maturação, o motor de diagnóstico agronômico e o laudo de colheita."
     )
 
-    add_fig("fig1_arquitetura.png", "Figura 1. Arquitetura geral do sistema dividida em quatro camadas funcionais: Interface Web React, Servidor ASGI Starlette, Motor de Inteligência YOLOv8/ExtraTrees e Histórico de Dados.")
+    add_fig("fig1_arquitetura.png", "Figura 1. Componentes do sistema divididos em três camadas funcionais: Interface Web React, Servidor Web ASGI da aplicação e Motor de Visão Computacional.")
 
     add_subsec_head("B. Pipeline de Inferência Híbrida Adaptativa")
     add_p(
-        "O pipeline de visão computacional, ilustrado na Figura 2, opera através de um fluxo híbrido adaptativo desenhado para garantir que tanto fotos "
+        "O pipeline de visão computacional opera através de um fluxo híbrido adaptativo desenhado para garantir que tanto fotos "
         "de câmeras de alta resolução (bandejas coletivas 4K) quanto fotografias de upload de menor resolução ou tiradas de perto (close-up) sejam processadas "
         "sem nenhuma perda de frutos."
     )
-
-    add_fig("fig2_pipeline.png", "Figura 2. Pipeline sequencial de visão computacional: desde a entrada da imagem até a emissão do diagnóstico agronômico e recomendações de colheita.")
 
     add_p(
         "O algoritmo processa a imagem em duas etapas consecutivas e complementares: "
@@ -669,16 +663,16 @@ def build_paper():
     )
 
     add_p(
-        "A interface web desenvolvida (Figura 3 e Figura 4) apresenta um leiaute profissional e reativo estruturado para facilidade de leitura e operação em campo. "
+        "A interface web desenvolvida (Figura 2 e Figura 3) apresenta um leiaute profissional e reativo estruturado para facilidade de leitura e operação em campo. "
         "O operador conta com pré-visualização instantânea da foto selecionada ou enviada por upload, cronômetro de inferência com discriminação de etapas, "
         "seis cartões de KPI informando as contagens e proporções exatas, gráfico vetorial SVG Donut com distribuição cromática percentual, cartão de diagnóstico "
         "agronômico fundamentado no Ápice da Qualidade e visualizador de imagem com ferramenta de alternância entre imagem original e detecções com caixas delimitadoras."
     )
 
-    # PRINTS REAIS: FIGURA 3 E FIGURA 4
-    add_fig("real_print_dashboard_operacao.png", "Figura 3. Print real da interface web do Dashboard TCC Café Arara em operação: cartões KPI por estágio, visualizador de Bounding Boxes com alternador de imagem original, cronômetro de inferência e diagnóstico do Ápice da Qualidade.")
+    # PRINTS REAIS: FIGURA 2 E FIGURA 3
+    add_fig("real_print_dashboard_operacao.png", "Figura 2. Print real da interface web do Dashboard TCC Café Arara em operação: cartões KPI por estágio, visualizador de Bounding Boxes com alternador de imagem original, cronômetro de inferência e diagnóstico do Ápice da Qualidade.")
 
-    add_fig("real_print_controles.png", "Figura 4. Print real do painel de parâmetros de inferência: controle de confiança (conf=0.04), espessura das caixas delimitadoras (2px) e ativação do Aprendizado Ativo em segundo plano.")
+    add_fig("real_print_controles.png", "Figura 3. Print real do painel de parâmetros de inferência: controle de confiança (conf=0.04), espessura das caixas delimitadoras (2px) e ativação do Aprendizado Ativo em segundo plano.")
 
     # ══════════════════════════════════════════════════════════════════════════
     # V. RESULTADOS E DISCUSSÃO
@@ -694,28 +688,28 @@ def build_paper():
     )
 
     add_p(
-        "Com a implementação do pipeline híbrido adaptativo sem restrições de corte espacial, a varredura cobriu 100% da área da bandeja (Figura 6). "
-        "O sistema resgatou 580 frutos verdes na margem superior, elevando a contagem global para 11.687 frutos identificados e classificados: 580 Verdes (5,0%), "
+        "Com a implementação do pipeline híbrido adaptativo sem restrições de corte espacial, a varredura cobriu 100% da área da bandeja (Figura 4). "
+        "O sistema resgatou 580 frutos verdes na margem superior (Figura 6), elevando a contagem global para 11.687 frutos identificados e classificados: 580 Verdes (5,0%), "
         "5.952 em Cereja I (50,9%), 203 em Cereja II (1,7%), 4.582 em Passa (39,2%) e 370 Secos (3,2%). A acurácia global de detecção, validada por auditoria "
         "visual amostral de 500 frutos marcados manualmente por especialista, atingiu 98,4%, comprovando que o algoritmo não omite frutos periféricos."
     )
 
-    # PRINT REAL: FIGURA 6
-    add_fig("real_print_bandeja_bboxes.png", "Figura 6. Print real da inferência exaustiva sobre a bandeja 4K de campo (IMG_3316.JPG): detecção densa e ininterrupta de 11.687 frutos de Café Arara com 100% de cobertura espacial, sem corte de coordenadas Y.")
+    # PRINT REAL: FIGURA 4
+    add_fig("real_print_bandeja_bboxes.png", "Figura 4. Print real da inferência exaustiva sobre a bandeja 4K de campo (IMG_3316.JPG): detecção densa e ininterrupta de 11.687 frutos de Café Arara com 100% de cobertura espacial, sem corte de coordenadas Y.")
 
     add_subsec_head("B. Eficácia do Discriminador de Madeira e Chão")
     add_p(
         "O módulo Machine Learning ExtraTrees treinado com os 14 atributos morfológicos foi submetido a uma matriz de validação cruzada estratificada sobre "
         "1.443 amostras rotuladas (920 grãos legítimos e 523 regiões de tábuas de madeira, réguas métricas amarelas e piso de asfalto). O classificador alcançou "
         "acurácia global de 100% e F1-Score de 1,00 no conjunto de teste independente. Durante os ensaios práticos nas 15 fotos do experimento, o discriminador "
-        "rejeitou com perfeição todas as propostas induzidas pela régua métrica graduada amarela e pelas ranhuras das tábuas de madeira da bandeja (Figura 7), "
+        "rejeitou com perfeição todas as propostas induzidas pela régua métrica graduada amarela e pelas ranhuras das tábuas de madeira da bandeja (Figura 5), "
         "eliminando completamente as caixas espúrias que antes poluíam a contagem em baixos limiares de confiança."
     )
 
-    # PRINT REAL: FIGURA 7
-    add_fig("real_print_macro_graos.png", "Figura 7. Print real em detalhe macro 1:1 da inspeção de borda: frutos esféricos classificados com precisão em seus estágios fenológicos e superfície da ripa de madeira mantida integralmente limpa, com ZERO falsos positivos.")
+    # PRINTS REAIS: FIGURA 5 E FIGURA 6
+    add_fig("real_print_macro_graos.png", "Figura 5. Print real em detalhe macro 1:1 da inspeção de borda: frutos esféricos classificados com precisão em seus estágios fenológicos e superfície da ripa de madeira mantida integralmente limpa, com ZERO falsos positivos.")
 
-    add_fig("fig6_validacao.png", "Figura 9. Comparativo experimental: (a) Abordagem heurística anterior com corte fixo de Y que perdia 580 grãos verdes no topo da esteira; (b) Abordagem híbrida proposta com varredura 100% e filtro ExtraTrees.")
+    add_fig("real_print_top_verdes.png", "Figura 6. Print real em detalhe da margem superior da esteira de campo: resgate e identificação de 580 frutos verdes anteriormente suprimidos pela abordagem de corte espacial fixo.")
 
     add_subsec_head("C. Desempenho e Medição de Latência Computacional")
     add_p(

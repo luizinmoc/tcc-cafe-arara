@@ -204,8 +204,19 @@ async def handle_history(request: Request) -> JSONResponse:
     return JSONResponse({"history": sessions})
 
 
+async def handle_favicon(request: Request) -> Response:
+    """Retorna o ícone oficial de café para a aba do navegador, evitando 404."""
+    svg_icon = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        '<text y=".9em" font-size="90">☕</text>'
+        '</svg>'
+    )
+    return Response(content=svg_icon, media_type="image/svg+xml")
+
+
 routes = [
     Route("/", handle_index, methods=["GET"]),
+    Route("/favicon.ico", handle_favicon, methods=["GET"]),
     Route("/api/status", handle_status, methods=["GET"]),
     Route("/api/samples", handle_samples_list, methods=["GET"]),
     Route("/api/sample/{name}", handle_sample_image, methods=["GET"]),

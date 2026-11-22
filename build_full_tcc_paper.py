@@ -515,9 +515,9 @@ def build_paper():
     # ══════════════════════════════════════════════════════════════════════════
     add_sec_head("IV. DESENVOLVIMENTO DO SISTEMA")
 
-    add_subsec_head("A. Arquitetura do Sistema e Componentes")
+    add_subsec_head("A. Arquitetura do Sistema e Amostragem Experimental")
     add_p(
-        "A arquitetura global do sistema, representada na Figura 1, foi desenhada segundo o padrão de separação de responsabilidades (SoC) em quatro "
+        "A arquitetura global do sistema foi desenhada segundo o padrão de separação de responsabilidades (SoC) em quatro "
         "módulos principais: "
         "\n1. Camada de Apresentação e Interação Web: desenvolvida em React 18 moderno com Tailwind CSS e componentes reativos, fornecendo visualizador "
         "de imagens em canvas com zoom/pan, renderização dinâmica de bounding boxes coloridas por classe, cronômetro em tempo real de inferência, gráficos "
@@ -531,14 +531,22 @@ def build_paper():
         "HSV dos 5 estágios de maturação, o motor de diagnóstico agronômico e o laudo de colheita."
     )
 
-    add_fig("fig1_arquitetura.png", "Figura 1. Componentes do sistema divididos em três camadas funcionais: Interface Web React, Servidor Web ASGI da aplicação e Motor de Visão Computacional.")
+    add_p(
+        "Para a avaliação empírica do sistema em condições reais de campo, utilizou-se uma bandeja experimental de amostragem (Figura 1), na qual os frutos "
+        "de Café Arara recém-colhidos foram uniformemente distribuídos sobre uma esteira de amostragem delimitada por moldura de madeira, simulando o procedimento "
+        "operacional de aferição de colheita em propriedades cafeeiras."
+    )
 
-    add_subsec_head("B. Pipeline de Inferência Híbrida Adaptativa")
+    add_fig("fig1_bandeja_original.png", "Figura 1. Imagem fotográfica de campo da bandeja experimental de Café Arara: disposição densa dos frutos sobre a esteira delimitada por moldura de madeira para amostragem e contagem computacional.", width_in=2.5)
+
+    add_subsec_head("B. Pipeline de Inferência Híbrida e Detecção Densa")
     add_p(
         "O pipeline de visão computacional opera através de um fluxo híbrido adaptativo desenhado para garantir que tanto fotos "
         "de câmeras de alta resolução (bandejas coletivas 4K) quanto fotografias de upload de menor resolução ou tiradas de perto (close-up) sejam processadas "
-        "sem nenhuma perda de frutos."
+        "sem nenhuma perda de frutos (Figura 2)."
     )
+
+    add_fig("fig2_bandeja_deteccoes.png", "Figura 2. Inferência exaustiva de visão computacional com o modelo YOLOv8 sobre a bandeja de amostragem: detecção densa com caixas delimitadoras cobrindo 100% da área útil da esteira (4.214 frutos identificados).", width_in=2.5)
 
     add_p(
         "O algoritmo processa a imagem em duas etapas consecutivas e complementares: "
@@ -663,53 +671,62 @@ def build_paper():
     )
 
     add_p(
-        "A interface web desenvolvida (Figura 2 e Figura 3) apresenta um leiaute profissional e reativo estruturado para facilidade de leitura e operação em campo. "
+        "A interface web desenvolvida apresenta um leiaute profissional e reativo estruturado para facilidade de leitura e operação em campo. "
         "O operador conta com pré-visualização instantânea da foto selecionada ou enviada por upload, cronômetro de inferência com discriminação de etapas, "
-        "seis cartões de KPI informando as contagens e proporções exatas, gráfico vetorial SVG Donut com distribuição cromática percentual, cartão de diagnóstico "
-        "agronômico fundamentado no Ápice da Qualidade e visualizador de imagem com ferramenta de alternância entre imagem original e detecções com caixas delimitadoras."
+        "painel de cartões KPI informando as contagens e proporções exatas (Figura 3), gráfico vetorial Donut com distribuição cromática percentual e diagnóstico "
+        "agronômico fundamentado no Ápice da Qualidade (Figura 4)."
     )
 
-    # PRINTS REAIS: FIGURA 2 E FIGURA 3
-    add_fig("real_print_dashboard_operacao.png", "Figura 2. Print real da interface web do Dashboard TCC Café Arara em operação: cartões KPI por estágio, visualizador de Bounding Boxes com alternador de imagem original, cronômetro de inferência e diagnóstico do Ápice da Qualidade.")
+    # FIGURA 3: CARTÕES KPI
+    add_fig("fig3_kpi_cartoes.png", "Figura 3. Painel de cartões KPI gerados pelo sistema: contagem total de 4.214 frutos e segregação percentual por classe fenológica (2,8% Verdes, 70,9% Cereja I, 6,1% Cereja II, 19,9% Passa e 0,4% Secos).", width_in=3.3)
 
-    add_fig("real_print_controles.png", "Figura 3. Print real do painel de parâmetros de inferência: controle de confiança (conf=0.04), espessura das caixas delimitadoras (2px) e ativação do Aprendizado Ativo em segundo plano.")
+    # FIGURA 4: DIAGNÓSTICO DE MATURAÇÃO
+    add_fig("fig4_diagnostico_maturacao.png", "Figura 4. Painel de diagnóstico da maturação: gráfico Donut de distribuição dos 4.214 frutos e laudo agronômico automatizado recomendando 'Excelente Ponto de Colheita'.", width_in=2.8)
+
+    add_p(
+        "Para garantir a evolução autônoma do modelo conforme novas amostras e condições de iluminação são incorporadas, o sistema integra a "
+        "Estação de Aprendizado Contínuo (Figura 5). O módulo permite disparar ciclos de aperfeiçoamento incremental (fine-tuning) em segundo plano, "
+        "congelando as primeiras 10 camadas convolucionais (freeze=10) da arquitetura YOLOv8 para preservar o aprendizado de bordas e texturas fundamentais."
+    )
+
+    # FIGURA 5: APRENDIZADO CONTÍNUO
+    add_fig("fig5_aprendizado_continuo.png", "Figura 5. Estação de Aprendizado Contínuo (Machine Learning): histórico de ciclos de fine-tuning incremental do modelo YOLOv8 em CPU com congelamento das primeiras 10 camadas convolucionais (freeze=10).", width_in=3.3)
 
     # ══════════════════════════════════════════════════════════════════════════
     # V. RESULTADOS E DISCUSSÃO
     # ══════════════════════════════════════════════════════════════════════════
     add_sec_head("V. RESULTADOS E DISCUSSÃO")
 
-    add_subsec_head("A. Verificação Funcional e Resgate de Frutos Marginais")
+    add_subsec_head("A. Detecção Global e Classificação Morfológica na Bandeja")
     add_p(
-        "A verificação experimental foi realizada comparando o pipeline proposto com a versão anterior baseada em corte fixo de coordenadas. Na fotografia "
-        "amostral de alta resolução IMG_3316.JPG (3840×2160 pixels), o sistema anterior que aplicava o corte fixo no eixo Y (descartando os 18% superiores da imagem) "
-        "suprimia integralmente toda a faixa de frutos verdes localizada na cabeceira da esteira, acusando uma contagem incompleta de 7.623 frutos e registrando "
-        "apenas 314 grãos verdes (4,1%)."
+        "A avaliação experimental foi realizada submetendo a imagem fotográfica de alta resolução da bandeja de amostragem (Figura 1) ao pipeline de visão computacional. "
+        "Conforme ilustrado na Figura 2, o sistema efetuou a detecção densa com cobertura de 100% da área útil da esteira, identificando um universo amostral "
+        "de 4.214 frutos de Café Arara com caixas delimitadoras precisas sobre cada grão."
     )
 
     add_p(
-        "Com a implementação do pipeline híbrido adaptativo sem restrições de corte espacial, a varredura cobriu 100% da área da bandeja (Figura 4). "
-        "O sistema resgatou 580 frutos verdes na margem superior (Figura 6), elevando a contagem global para 11.687 frutos identificados e classificados: 580 Verdes (5,0%), "
-        "5.952 em Cereja I (50,9%), 203 em Cereja II (1,7%), 4.582 em Passa (39,2%) e 370 Secos (3,2%). A acurácia global de detecção, validada por auditoria "
-        "visual amostral de 500 frutos marcados manualmente por especialista, atingiu 98,4%, comprovando que o algoritmo não omite frutos periféricos."
+        "A classificação espectral e morfológica dos frutos detectados (Figura 3 e Figura 4) revelou a seguinte distribuição fenológica no lote avaliado: "
+        "\n• Verde (Imaturo): 119 frutos (2,8%), indicando índice residual mínimo de frutos verdes e ausência de perdas por adstringência ácida; "
+        "\n• Cereja I (Início de Maturação): 2.986 frutos (70,9%), correspondendo à predominância da transição amarelada rica em compostos aromáticos; "
+        "\n• Cereja II (Ápice da Maturação): 256 frutos (6,1%), evidenciando maturação amarela plena e intumescimento celular máximo; "
+        "\n• Passa (Ápice Concentrado): 837 frutos (19,9%), apresentando desidratação osmótica inicial e teor de açúcares no limite superior; e "
+        "\n• Seco: 16 frutos (0,4%), confirmando que o lote foi colhido antes da ocorrência de dessecação excessiva ou fermentações indesejáveis."
     )
 
-    # PRINT REAL: FIGURA 4
-    add_fig("real_print_bandeja_bboxes.png", "Figura 4. Print real da inferência exaustiva sobre a bandeja 4K de campo (IMG_3316.JPG): detecção densa e ininterrupta de 11.687 frutos de Café Arara com 100% de cobertura espacial, sem corte de coordenadas Y.")
-
-    add_subsec_head("B. Eficácia do Discriminador de Madeira e Chão")
     add_p(
-        "O módulo Machine Learning ExtraTrees treinado com os 14 atributos morfológicos foi submetido a uma matriz de validação cruzada estratificada sobre "
-        "1.443 amostras rotuladas (920 grãos legítimos e 523 regiões de tábuas de madeira, réguas métricas amarelas e piso de asfalto). O classificador alcançou "
-        "acurácia global de 100% e F1-Score de 1,00 no conjunto de teste independente. Durante os ensaios práticos nas 15 fotos do experimento, o discriminador "
-        "rejeitou com perfeição todas as propostas induzidas pela régua métrica graduada amarela e pelas ranhuras das tábuas de madeira da bandeja (Figura 5), "
-        "eliminando completamente as caixas espúrias que antes poluíam a contagem em baixos limiares de confiança."
+        "O Índice do Ápice da Qualidade somado à faixa de transição favorável (Cereja I + Cereja II + Passa) totalizou 4.079 frutos, representando 96,8% da bandeja. "
+        "Essa concentração determinou a emissão automatizada do diagnóstico de 'Excelente Ponto de Colheita' (Figura 4), validando a premissa de que a visão "
+        "computacional fornece subsídio técnico objetivo e reprodutível para a tomada de decisão no agronegócio do café especial."
     )
 
-    # PRINTS REAIS: FIGURA 5 E FIGURA 6
-    add_fig("real_print_macro_graos.png", "Figura 5. Print real em detalhe macro 1:1 da inspeção de borda: frutos esféricos classificados com precisão em seus estágios fenológicos e superfície da ripa de madeira mantida integralmente limpa, com ZERO falsos positivos.")
-
-    add_fig("real_print_top_verdes.png", "Figura 6. Print real em detalhe da margem superior da esteira de campo: resgate e identificação de 580 frutos verdes anteriormente suprimidos pela abordagem de corte espacial fixo.")
+    add_subsec_head("B. Desempenho dos Ciclos de Aprendizado Contínuo")
+    add_p(
+        "A avaliação da Estação de Aprendizado Contínuo (Figura 5) demonstrou a viabilidade operacional do aperfeiçoamento contínuo em ambiente de produção agrícola. "
+        "Foram registrados 10 ciclos sucessivos de retreinamento supervisionado (versões v1.14 a v1.23), cada qual executando 2 épocas de ajuste fino com congelamento "
+        "de camadas (freeze=10) utilizando exclusivamente processamento em CPU convencional. "
+        "Os tempos de execução oscilaram de 95,4 segundos a 161,5 segundos por ciclo, demonstrando que o fine-tuning incremental pode ser executado em segundo plano "
+        "sem demandar servidores dedicados com GPU de alto custo."
+    )
 
     add_subsec_head("C. Desempenho e Medição de Latência Computacional")
     add_p(

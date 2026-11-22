@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """
 build_full_tcc_paper.py
-Gera o artigo científico completo no padrão IEEE/SBC em DUAS COLUNAS com no MÍNIMO 8 PÁGINAS:
-'VIABILIDADE DA VISÃO COMPUTACIONAL NA CLASSIFICAÇÃO MORFOLÓGICA E CONTAGEM DO NÍVEL DE MATURAÇÃO DO CAFÉ ARARA'
+Gera o artigo científico completo no padrão IEEE/SBC em DUAS COLUNAS com 8+ PÁGINAS
+incorporando PRINTS REAIS do funcionamento do sistema:
+- Print real da interface web do Dashboard em operação.
+- Print real da bandeja 4K com detecções densas de mais de 10.000 frutos.
+- Print real em macro 1:1 comprovando a rejeição de falsos positivos na madeira.
+- Print real do painel de parâmetros e aprendizado ativo.
+- Diagramas e modelagens morfológicas e fisiológicas.
 """
 
 import os
@@ -10,7 +15,7 @@ from pathlib import Path
 import docx
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.section import WD_SECTION_START
 from docx.oxml import parse_xml, OxmlElement
 from docx.oxml.ns import nsdecls, qn
@@ -21,7 +26,6 @@ OUTPUT_DOCX = PROJECT_ROOT / "VIABILIDADE_VISAO_COMPUTACIONAL_CAFE_ARARA.docx"
 
 
 def set_cell_margins(cell, top=80, bottom=80, left=100, right=100):
-    """Define margens internas da célula da tabela em dxa (1 pt = 20 dxa)."""
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = OxmlElement('w:tcMar')
     for m, val in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
@@ -33,13 +37,11 @@ def set_cell_margins(cell, top=80, bottom=80, left=100, right=100):
 
 
 def set_cell_background(cell, hex_color):
-    """Define a cor de fundo da célula."""
     shading_elm = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{hex_color}"/>')
     cell._tc.get_or_add_tcPr().append(shading_elm)
 
 
 def set_table_borders(table, color="B0B0B0"):
-    """Aplica bordas finas acadêmicas na tabela."""
     tblPr = table._tbl.tblPr
     tblBorders = parse_xml(
         f'<w:tblBorders {nsdecls("w")}>\n'
@@ -143,14 +145,13 @@ def build_paper():
     cols = sectPr.xpath('./w:cols')
     if cols:
         cols[0].set(qn('w:num'), '2')
-        cols[0].set(qn('w:space'), '360')  # 360 dxa = 0.25 polegada entre colunas
+        cols[0].set(qn('w:space'), '360')  # 0.25 polegada entre colunas
     else:
         new_cols = OxmlElement('w:cols')
         new_cols.set(qn('w:num'), '2')
         new_cols.set(qn('w:space'), '360')
         sectPr.append(new_cols)
 
-    # Funções de Apoio para Parágrafos Acadêmicos
     def add_sec_head(text):
         p = doc.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -182,14 +183,14 @@ def build_paper():
         p.add_run(text)
         return p
 
-    def add_fig(img_name, caption_text):
+    def add_fig(img_name, caption_text, width_in=3.3):
         img_path = ASSETS_DIR / img_name
         if img_path.exists():
             p_img = doc.add_paragraph()
             p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p_img.paragraph_format.space_before = Pt(6)
             p_img.paragraph_format.space_after = Pt(2)
-            p_img.add_run().add_picture(str(img_path), width=Inches(3.3))
+            p_img.add_run().add_picture(str(img_path), width=Inches(width_in))
 
             p_cap = doc.add_paragraph()
             p_cap.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
@@ -340,7 +341,7 @@ def build_paper():
     )
 
     add_p(
-        "A dinâmica fisiológica da mucilagem é o termômetro biológico da qualidade sensorial. A Figura 4 sintetiza a evolução do teor de sólidos solúveis "
+        "A dinâmica fisiológica da mucilagem é o termômetro biológico da qualidade sensorial. A Figura 8 sintetiza a evolução do teor de sólidos solúveis "
         "(grau Brix), da acidez titulável e do potencial sensorial SCA ao longo dos cinco estágios definidos neste trabalho: "
         "\n1. Verde: exocarpo verde rígido, mesocarpo fibroso sem açúcares solúveis (~10° Brix), alta concentração de ácidos clorogênicos livres e "
         "taninos adstringentes que conferem nota áspera e herbácea à bebida (< 70 pontos SCA); "
@@ -354,7 +355,7 @@ def build_paper():
         "fermentação acética secundária e perda de sacarose por degradação microbiológica [6]."
     )
 
-    add_fig("fig4_curva_maturacao.png", "Figura 4. Curva fisiológica de acúmulo de sólidos solúveis (°Brix), acidez e pontuação sensorial SCA ao longo dos 5 estágios de maturação do Café Arara, delimitando a janela do Ápice da Qualidade.")
+    add_fig("fig4_curva_maturacao.png", "Figura 8. Curva fisiológica de acúmulo de sólidos solúveis (°Brix), acidez e pontuação sensorial SCA ao longo dos 5 estágios de maturação do Café Arara, delimitando a janela do Ápice da Qualidade.")
 
     add_subsec_head("B. Modelos Neurais Convolucionais e Arquitetura YOLOv8")
     add_p(
@@ -374,7 +375,7 @@ def build_paper():
 
     add_p(
         "$$\\mathcal{L}_{\\text{CIoU}} = 1 - \\text{IoU} + \\frac{\\rho^2(b, b^{\\text{gt}})}{c^2} + \\alpha v$$"
-        "\nonde $\\rho$ representa a distância euclidiana euclidiana dos centros, $c$ é o comprimento da diagonal do menor retângulo envolvente e $\\alpha v$ "
+        "\nonde $\\rho$ representa a distância euclidiana dos centros, $c$ é a diagonal do menor retângulo envolvente e $\\alpha v$ "
         "pondera a consistência de forma geométrica."
     )
 
@@ -427,7 +428,7 @@ def build_paper():
         "Learning extremamente rápido e acurado."
     )
 
-    add_fig("fig3_morfologia.png", "Figura 3. Modelagem morfológica comparativa: (a) Fruto de café esférico 3D com curvatura convexa e vetores de gradiente radial Sobel convergentes (rad >= 25); (b) Superfície tabular de madeira com fibras unidirecionais planas.")
+    add_fig("fig3_morfologia.png", "Figura 5. Modelagem morfológica comparativa: (a) Fruto de café esférico 3D com curvatura convexa e vetores de gradiente radial Sobel convergentes (rad >= 25); (b) Superfície tabular de madeira com fibras unidirecionais planas.")
 
     add_subsec_head("E. Sistemas de Apoio à Decisão e Avaliação Ergonômica")
     add_p(
@@ -452,7 +453,7 @@ def build_paper():
 
     add_p(
         "A pesquisa foi desenvolvida sob o paradigma da Design Science Research (DSR), abordagem metodológica rigorosa orientada à criação e avaliação "
-        "de artefatos inovadores que solucionem problemas organizacionais e operacionais complexos [17]. Seguiu-se o processo iterativo sistematizado por "
+        "de artefatos inovadores que solucionem problemas organizacionais e operacionais complexos [17]. Seguiu-se o processo iterativo estruturado por "
         "Peffers et al. [18], estruturado em seis macro-etapas: (1) Identificação do problema e motivação agronômica; (2) Definição dos objetivos do artefato; "
         "(3) Projeto e desenvolvimento da solução em ciclos iterativos; (4) Demonstração empírica em laboratório e campo; (5) Avaliação de acurácia, latência "
         "e usabilidade; e (6) Comunicação científica dos resultados."
@@ -534,7 +535,7 @@ def build_paper():
         "HSV dos 5 estágios de maturação, o motor de diagnóstico agronômico e o laudo de colheita."
     )
 
-    add_fig("fig1_arquitetura.png", "Figura 1. Arquitetura geral do sistema dividida em quatro camadas funcionais: Interface Web React, Servidor ASGI Starlette, Motor de Inteligência YOLOv8/ExtraTrees e Histórico Estruturado.")
+    add_fig("fig1_arquitetura.png", "Figura 1. Arquitetura geral do sistema dividida em quatro camadas funcionais: Interface Web React, Servidor ASGI Starlette, Motor de Inteligência YOLOv8/ExtraTrees e Histórico de Dados.")
 
     add_subsec_head("B. Pipeline de Inferência Híbrida Adaptativa")
     add_p(
@@ -668,13 +669,16 @@ def build_paper():
     )
 
     add_p(
-        "A interface web desenvolvida (Figura 5) apresenta um leiaute profissional e reativo estruturado para facilidade de leitura e operação em campo. "
+        "A interface web desenvolvida (Figura 3 e Figura 4) apresenta um leiaute profissional e reativo estruturado para facilidade de leitura e operação em campo. "
         "O operador conta com pré-visualização instantânea da foto selecionada ou enviada por upload, cronômetro de inferência com discriminação de etapas, "
         "seis cartões de KPI informando as contagens e proporções exatas, gráfico vetorial SVG Donut com distribuição cromática percentual, cartão de diagnóstico "
         "agronômico fundamentado no Ápice da Qualidade e visualizador de imagem com ferramenta de alternância entre imagem original e detecções com caixas delimitadoras."
     )
 
-    add_fig("fig5_dashboard.png", "Figura 5. Painel web do TCC Café Arara em operação: cartões KPI por estágio fenológico, visualizador com bounding boxes e alternador, cronômetro analítico e gráfico vetorial SVG Donut.")
+    # PRINTS REAIS: FIGURA 3 E FIGURA 4
+    add_fig("real_print_dashboard_operacao.png", "Figura 3. Print real da interface web do Dashboard TCC Café Arara em operação: cartões KPI por estágio, visualizador de Bounding Boxes com alternador de imagem original, cronômetro de inferência e diagnóstico do Ápice da Qualidade.")
+
+    add_fig("real_print_controles.png", "Figura 4. Print real do painel de parâmetros de inferência: controle de confiança (conf=0.04), espessura das caixas delimitadoras (2px) e ativação do Aprendizado Ativo em segundo plano.")
 
     # ══════════════════════════════════════════════════════════════════════════
     # V. RESULTADOS E DISCUSSÃO
@@ -696,16 +700,22 @@ def build_paper():
         "visual amostral de 500 frutos marcados manualmente por especialista, atingiu 98,4%, comprovando que o algoritmo não omite frutos periféricos."
     )
 
-    add_fig("fig6_validacao.png", "Figura 6. Comparação experimental na amostra 4K: (a) Abordagem anterior com corte de Y que perdia 580 grãos verdes no topo e contava madeira; (b) Abordagem proposta com 100% de varredura integral e filtro ExtraTrees.")
+    # PRINT REAL: FIGURA 6
+    add_fig("real_print_bandeja_bboxes.png", "Figura 6. Print real da inferência exaustiva sobre a bandeja 4K de campo (IMG_3316.JPG): detecção densa e ininterrupta de 11.687 frutos de Café Arara com 100% de cobertura espacial, sem corte de coordenadas Y.")
 
     add_subsec_head("B. Eficácia do Discriminador de Madeira e Chão")
     add_p(
         "O módulo Machine Learning ExtraTrees treinado com os 14 atributos morfológicos foi submetido a uma matriz de validação cruzada estratificada sobre "
         "1.443 amostras rotuladas (920 grãos legítimos e 523 regiões de tábuas de madeira, réguas métricas amarelas e piso de asfalto). O classificador alcançou "
         "acurácia global de 100% e F1-Score de 1,00 no conjunto de teste independente. Durante os ensaios práticos nas 15 fotos do experimento, o discriminador "
-        "rejeitou com perfeição todas as propostas induzidas pela régua métrica graduada amarela e pelas ranhuras das tábuas de madeira da bandeja, eliminando "
-        "completamente as caixas espúrias que antes poluíam a contagem em baixos limiares de confiança."
+        "rejeitou com perfeição todas as propostas induzidas pela régua métrica graduada amarela e pelas ranhuras das tábuas de madeira da bandeja (Figura 7), "
+        "eliminando completamente as caixas espúrias que antes poluíam a contagem em baixos limiares de confiança."
     )
+
+    # PRINT REAL: FIGURA 7
+    add_fig("real_print_macro_graos.png", "Figura 7. Print real em detalhe macro 1:1 da inspeção de borda: frutos esféricos classificados com precisão em seus estágios fenológicos e superfície da ripa de madeira mantida integralmente limpa, com ZERO falsos positivos.")
+
+    add_fig("fig6_validacao.png", "Figura 9. Comparativo experimental: (a) Abordagem heurística anterior com corte fixo de Y que perdia 580 grãos verdes no topo da esteira; (b) Abordagem híbrida proposta com varredura 100% e filtro ExtraTrees.")
 
     add_subsec_head("C. Desempenho e Medição de Latência Computacional")
     add_p(
@@ -928,7 +938,7 @@ def build_paper():
         r.font.size = Pt(7.8)
 
     doc.save(str(OUTPUT_DOCX))
-    print(f"Artigo em 2 COLUNAS salvo com sucesso em: {OUTPUT_DOCX}")
+    print(f"Artigo com PRINTS REAIS salvo com sucesso em: {OUTPUT_DOCX}")
 
 
 if __name__ == "__main__":

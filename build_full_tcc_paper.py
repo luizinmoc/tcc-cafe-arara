@@ -12,6 +12,7 @@ incorporando PRINTS REAIS do funcionamento do sistema:
 
 import os
 from pathlib import Path
+from lxml import etree
 import docx
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -23,6 +24,27 @@ from docx.oxml.ns import nsdecls, qn
 PROJECT_ROOT = Path(__file__).resolve().parent
 ASSETS_DIR = PROJECT_ROOT / "paper_assets"
 OUTPUT_DOCX = PROJECT_ROOT / "VIABILIDADE_VISAO_COMPUTACIONAL_CAFE_ARARA.docx"
+
+XSLT_PATH = r"C:\Program Files\Microsoft Office\root\Office16\MML2OMML.XSL"
+_xslt_doc = etree.parse(XSLT_PATH)
+_transform = etree.XSLT(_xslt_doc)
+
+
+def add_math_equation(doc, mathml_str):
+    """
+    Converte expressão MathML em OMML (Office Math Markup Language)
+    nativa do Word e insere no parágrafo centralizado, correspondendo exatamente
+    ao recurso nativo 'Inserir Fórmula Matemática' do Microsoft Word.
+    """
+    tree = etree.fromstring(mathml_str.strip())
+    omml = _transform(tree)
+    omml_bytes = etree.tostring(omml, encoding="utf-8")
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(4)
+    p.paragraph_format.space_after = Pt(4)
+    p._p.append(parse_xml(omml_bytes))
+    return p
 
 
 def set_cell_margins(cell, top=80, bottom=80, left=100, right=100):
@@ -215,10 +237,10 @@ def build_paper():
         "nível de maturação do Café Arara. A solução proposta integra redes neurais convolucionais profundas (YOLOv8) a um pipeline híbrido composto por "
         "fatiamento em grade (tiling 1:1) com janelamento deslizante de alta densidade, supressão de não-máximos global e um discriminador morfológico "
         "por Machine Learning (ExtraTreesClassifier com 14 descritores físico-geométricos e espectrais). O método viabiliza a contagem exaustiva de "
-        "mais de 10.000 frutos justapostos em bandejas de resolução 4K e elimina integralmente falsos positivos decorrentes da estrutura de madeira "
+        "milhares de frutos justapostos em bandejas de campo e elimina integralmente falsos positivos decorrentes da estrutura de madeira "
         "do ripado, tocos e solo da lavoura. A classificação espectral segmenta a amostra em cinco estágios fenológicos: Verde, Cereja I, Cereja II, "
         "Passa e Seco, estabelecendo formalmente a transição entre Cereja II e Passa como o ápice da qualidade sensorial (pico de açúcares solúveis/grau Brix). "
-        "Experimentos com amostras reais de campo demonstraram a detecção de 10.564 a 11.687 frutos por bandeja com 100% de cobertura espacial (sem cortes forçados de eixo) "
+        "Experimentos com amostras reais de campo demonstraram a detecção exata de 4.214 frutos em bandeja experimental com 100% de cobertura espacial (sem cortes forçados de eixo) "
         "e latência mediana de 1,21 s em CPU padrão. Um painel web moderno (Starlette/React) foi construído para fornecer apoio à decisão agronômica com "
         "diagnósticos automatizados, visualização interativa com bounding boxes, cronometria analítica e exportação de relatórios em CSV."
     )
@@ -242,11 +264,11 @@ def build_paper():
         "technical feasibility of computer vision for morphological classification and automated maturity counting of Arara coffee. The proposed "
         "architecture combines deep convolutional neural networks (YOLOv8) with a hybrid pipeline comprising multi-scale global inference, "
         "high-density 1:1 sliding window tiling, global non-maximum suppression, and an ExtraTrees Machine Learning morphological discriminator "
-        "trained on 14 physical, geometric, and spectral descriptors. The methodology resolves the challenge of counting over 10,000 closely packed "
-        "fruits on 4K trays while rejecting spurious background detections on wooden drying rack slats, sticks, leaves, and ground surfaces. "
+        "trained on 14 physical, geometric, and spectral descriptors. The methodology resolves the challenge of counting thousands of closely packed "
+        "fruits on field sampling trays while rejecting spurious background detections on wooden drying rack slats, sticks, leaves, and ground surfaces. "
         "Colorimetric spectrometry classifies fruits into five phenological stages: Green, Cherry I, Cherry II, Raisin (Passa), and Dry, defining "
         "the transition between Cherry II and Raisin as the peak sensory quality (maximum Brix sugar concentration). Experimental validation on "
-        "field samples confirmed the accurate counting of 10,564 to 11,687 fruits per tray with 100% spatial coverage (no coordinate cropping) "
+        "field samples confirmed the accurate counting of 4,214 fruits on an experimental tray with 100% spatial coverage (no coordinate cropping) "
         "and a median inference latency of 1.21 s on commodity CPU hardware. A decision-support web dashboard (Starlette/React) was developed to "
         "provide automated agronomic diagnostics, interactive bounding-box inspection, real-time chronometry, and CSV reporting."
     )
@@ -312,8 +334,8 @@ def build_paper():
 
     add_p(
         "Diante desse contexto, formula-se a seguinte questão de pesquisa: É viável, por meio da conjugação entre deep learning e discriminadores morfológicos "
-        "em visão computacional, realizar a contagem exaustiva de mais de 10.000 frutos de Café Arara por tomada fotográfica, eliminando ruídos de madeira e chão, "
-        "e estruturar esses dados em um painel web que auxilie a tomada de decisão agronômica sobre o ponto ótimo de colheita?"
+        "em visão computacional, realizar a contagem exaustiva de milhares de frutos de Café Arara por tomada fotográfica (como a amostragem de 4.214 frutos avaliada), "
+        "eliminando ruídos de madeira e chão, e estruturar esses dados em um painel web que auxilie a tomada de decisão agronômica sobre o ponto ótimo de colheita?"
     )
 
     add_p(
@@ -368,21 +390,32 @@ def build_paper():
         "de gradiente sem degradar a capacidade representativa da rede. O módulo de detecção utiliza uma cabeça desacoplada (decoupled head), separando as "
         "perdas de classificação (usando Binary Cross-Entropy) das perdas de regressão de caixa delimitadora, que combinam a perda Complete IoU (CIoU) com "
         "a Distribution Focal Loss (DFL) [7]. A formulação da perda CIoU incorpora a distância euclidiana normalizada entre centros de caixas, a sobreposição "
-        "de área e a coerência da razão de aspecto entre a caixa predita B e a caixa de referência B_gt:"
+        "de área e a coerência da razão de aspecto entre a caixa predita e a caixa de referência de treinamento:"
     )
 
+    add_math_equation(doc, """<math xmlns="http://www.w3.org/1998/Math/MathML">
+      <mrow>
+        <msub><mi mathvariant="script">L</mi><mtext>CIoU</mtext></msub>
+        <mo>=</mo><mn>1</mn><mo>−</mo><mtext>IoU</mtext><mo>+</mo>
+        <mfrac>
+          <mrow><msup><mi>ρ</mi><mn>2</mn></msup><mo stretchy="false">(</mo><mi>b</mi><mo>,</mo><msup><mi>b</mi><mtext>gt</mtext></msup><mo stretchy="false">)</mo></mrow>
+          <msup><mi>c</mi><mn>2</mn></msup>
+        </mfrac>
+        <mo>+</mo><mi>α</mi><mi>v</mi>
+      </mrow>
+    </math>""")
+
     add_p(
-        "$$\\mathcal{L}_{\\text{CIoU}} = 1 - \\text{IoU} + \\frac{\\rho^2(b, b^{\\text{gt}})}{c^2} + \\alpha v$$"
-        "\nonde $\\rho$ representa a distância euclidiana dos centros, $c$ é a diagonal do menor retângulo envolvente e $\\alpha v$ "
+        "onde ρ representa a distância euclidiana dos centros, c é a diagonal do menor retângulo envolvente e α · v "
         "pondera a consistência de forma geométrica."
     )
 
     add_p(
         "A despeito de sua excelência técnica, a aplicação padrão do YOLOv8 impõe um redimensionamento obrigatório da imagem de entrada para uma dimensão "
-        "quadrada típica (imgsz = 640×640 pixels). Quando uma imagem capturada por câmera fotográfica de alta resolução (ex: 3840×2160 pixels, contendo "
-        "mais de 11.000 frutos de café) é redimensionada diretamente para 640×640, a área média ocupada por cada grão na imagem é reduzida de aproximadamente "
-        "400 pixels para menos de 6 pixels! Em tal nível de compressão, os detalhes visuais finos (curvatura do fruto, fenda pericarpo e textura da casca) "
-        "são irremediavelmente aniquilados, impedindo qualquer contagem consistente [8]."
+        "quadrada típica (imgsz = 640×640 pixels). Quando uma imagem fotográfica de alta resolução de campo (ex: 3840×2160 pixels, contendo milhares de frutos "
+        "de café, como a bandeja de 4.214 frutos avaliada neste trabalho) é redimensionada diretamente para 640×640, a área média ocupada por cada grão na "
+        "imagem é reduzida drasticamente de centenas de pixels para menos de 6 pixels! Em tal nível de compressão, os detalhes visuais finos (curvatura do fruto, "
+        "fenda do pericarpo e textura da casca) são degradados, impedindo qualquer contagem consistente [8]."
     )
 
     add_subsec_head("C. Fatiamento em Grade (Tiling / SAHI) e Fusão Espacial")
@@ -558,9 +591,17 @@ def build_paper():
         "em cada eixo (X e Y) obedece à equação:"
     )
 
+    add_math_equation(doc, """<math xmlns="http://www.w3.org/1998/Math/MathML">
+      <mrow>
+        <msub><mi>N</mi><mtext>coords</mtext></msub>
+        <mo>=</mo>
+        <mrow><mo>⌊</mo><mfrac><mrow><msub><mi>V</mi><mtext>max</mtext></msub><mo>−</mo><msub><mi>V</mi><mtext>min</mtext></msub><mo>−</mo><msub><mi>S</mi><mtext>tile</mtext></msub></mrow><msub><mi>S</mi><mtext>stride</mtext></msub></mfrac><mo>⌋</mo></mrow>
+        <mo>+</mo><mn>1</mn>
+      </mrow>
+    </math>""")
+
     add_p(
-        "$$N_{\\text{coords}} = \\left\\lfloor \\frac{V_{\\max} - V_{\\min} - S_{\\text{tile}}}{S_{\\text{stride}}} \\right\\rfloor + 1$$"
-        "\nonde $S_{\\text{tile}} = 640$ pixels e $S_{\\text{stride}} = 360$ pixels. A última janela de cada eixo é forçada exatamente na borda ($V_{\\max} - S_{\\text{tile}}$). "
+        "onde S_tile = 640 pixels e S_stride = 360 pixels. A última janela de cada eixo é forçada exatamente na borda (V_max - S_tile). "
         "Caso um recorte marginal possua dimensões inferiores a 640×640, aplica-se preenchimento reflexivo nas bordas através de cv2.copyMakeBorder com a flag "
         "cv2.BORDER_REFLECT. Dessa forma, nenhum fruto nas bordas da bandeja é cortado."
     )
@@ -579,17 +620,27 @@ def build_paper():
         "\n1. Contraste Centro-Borda (c2b): O núcleo central do fruto compreende a janela interior de 25% a 75% da altura e largura da caixa. O contraste é definido como:"
     )
 
-    add_p(
-        "$$c2b = \\bar{I}_{\\text{centro}} - \\frac{1}{4} \\left( \\bar{I}_{\\text{topo}} + \\bar{I}_{\\text{base}} + \\bar{I}_{\\text{esq}} + \\bar{I}_{\\text{dir}} \\right)$$"
-    )
+    add_math_equation(doc, """<math xmlns="http://www.w3.org/1998/Math/MathML">
+      <mrow>
+        <mi>c</mi><mn>2</mn><mi>b</mi><mo>=</mo>
+        <msub><mover><mi>I</mi><mo stretchy="false">¯</mo></mover><mtext>centro</mtext></msub>
+        <mo>−</mo><mfrac><mn>1</mn><mn>4</mn></mfrac>
+        <mrow><mo>(</mo><msub><mover><mi>I</mi><mo stretchy="false">¯</mo></mover><mtext>topo</mtext></msub><mo>+</mo><msub><mover><mi>I</mi><mo stretchy="false">¯</mo></mover><mtext>base</mtext></msub><mo>+</mo><msub><mover><mi>I</mi><mo stretchy="false">¯</mo></mover><mtext>esq</mtext></msub><mo>+</mo><msub><mover><mi>I</mi><mo stretchy="false">¯</mo></mover><mtext>dir</mtext></msub><mo>)</mo></mrow>
+      </mrow>
+    </math>""")
 
     add_p(
-        "\n2. Gradiente Radial Convergente (rad): Mede a convergência esférica dos vetores de Sobel horizontais e verticais em direção ao centro da caixa delimitadora:"
+        "2. Gradiente Radial Convergente (rad): Mede a convergência esférica dos vetores de Sobel horizontais e verticais em direção ao centro da caixa delimitadora:"
     )
 
-    add_p(
-        "$$rad = \\left( \\bar{G}_{x}^{\\text{esq}} - \\bar{G}_{x}^{\\text{dir}} \\right) + \\left( \\bar{G}_{y}^{\\text{topo}} - \\bar{G}_{y}^{\\text{base}} \\right)$$"
-    )
+    add_math_equation(doc, """<math xmlns="http://www.w3.org/1998/Math/MathML">
+      <mrow>
+        <mi>r</mi><mi>a</mi><mi>d</mi><mo>=</mo>
+        <mrow><mo>(</mo><msubsup><mover><mi>G</mi><mo stretchy="false">¯</mo></mover><mi>x</mi><mtext>esq</mtext></msubsup><mo>−</mo><msubsup><mover><mi>G</mi><mo stretchy="false">¯</mo></mover><mi>x</mi><mtext>dir</mtext></msubsup><mo>)</mo></mrow>
+        <mo>+</mo>
+        <mrow><mo>(</mo><msubsup><mover><mi>G</mi><mo stretchy="false">¯</mo></mover><mi>y</mi><mtext>topo</mtext></msubsup><mo>−</mo><msubsup><mover><mi>G</mi><mo stretchy="false">¯</mo></mover><mi>y</mi><mtext>base</mtext></msubsup><mo>)</mo></mrow>
+      </mrow>
+    </math>""")
 
     add_p(
         "Além de c2b e rad, são extraídos: contrastes extremos (min_d, max_d), mediana e desvio de saturação (s_med, s_std), mediana e desvio de brilho (v_med, v_std), "
@@ -650,15 +701,23 @@ def build_paper():
                 r.font.bold = True
 
     add_p(
-        "A tomada de decisão baseia-se no Índice do Ápice da Qualidade ($I_{\\text{ápice}}$):"
+        "A tomada de decisão baseia-se no Índice do Ápice da Qualidade (I_ápice):"
     )
 
-    add_p(
-        "$$I_{\\text{ápice}} = \\frac{N_{\\text{cereja\\_2}} + N_{\\text{passa}}}{N_{\\text{total}}} \\times 100\\%$$"
-    )
+    add_math_equation(doc, """<math xmlns="http://www.w3.org/1998/Math/MathML">
+      <mrow>
+        <msub><mi>I</mi><mtext>ápice</mtext></msub>
+        <mo>=</mo>
+        <mfrac>
+          <mrow><msub><mi>N</mi><mrow><mtext>cereja</mtext><mn>2</mn></mrow></msub><mo>+</mo><msub><mi>N</mi><mtext>passa</mtext></msub></mrow>
+          <msub><mi>N</mi><mtext>total</mtext></msub>
+        </mfrac>
+        <mo>×</mo><mn>100</mn><mi>%</mi>
+      </mrow>
+    </math>""")
 
     add_p(
-        "Quando $I_{\\text{ápice}} \\ge 50\\%$, o lote é diagnosticado no Ponto Ótimo de Colheita (Ápice da Qualidade), assegurando notas SCA máximas na xícara. "
+        "Quando I_ápice ≥ 50%, o lote é diagnosticado no Ponto Ótimo de Colheita (Ápice da Qualidade), assegurando notas SCA máximas na xícara. "
         "Se o somatório com Cereja I atingir 60%, a recomendação é de colheita imediata favorável; acima de 35% de verdes, a recomendação alerta para aguardar maturação."
     )
 
@@ -779,7 +838,7 @@ def build_paper():
             r.font.size = Pt(7.5)
 
     add_p(
-        "A latência total consolidada para processar uma fotografia 4K contendo mais de dez mil grãos foi de 1.210 ms (1,21 s), o que cumpre rigorosamente os "
+        "A latência total consolidada para processar uma fotografia 4K contendo milhares de grãos (como a amostragem de 4.214 frutos avaliada) foi de 1.210 ms (1,21 s), o que cumpre rigorosamente os "
         "critérios de resposta de Nielsen [19] para interfaces interativas sem que haja sensação de travamento pelo operador."
     )
 

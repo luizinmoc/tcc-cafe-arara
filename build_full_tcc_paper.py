@@ -2,12 +2,13 @@
 """
 build_full_tcc_paper.py
 Gera o artigo científico completo no padrão IEEE/SBC em DUAS COLUNAS com 8+ PÁGINAS
-incorporando PRINTS REAIS do funcionamento do sistema:
-- Print real da interface web do Dashboard em operação.
-- Print real da bandeja 4K com detecções densas de mais de 10.000 frutos.
-- Print real em macro 1:1 comprovando a rejeição de falsos positivos na madeira.
-- Print real do painel de parâmetros e aprendizado ativo.
-- Diagramas e modelagens morfológicas e fisiológicas.
+com base no texto revisado fornecido pelo usuário:
+- Título: Viabilidade da Visão Computacional na Contagem e na Classificação Colorimétrica do Estágio de Maturação do Café Arara
+- Autores: Luiz Gustavo Souza Santos e Prof. Alysson Steve Lacerda (UNIMONTES)
+- 5 Figuras reais enviadas pelo usuário
+- Fórmulas matemáticas inseridas como equações nativas do Microsoft Word (OMML)
+- Tabelas detalhadas de metodologia DSR, calibração HSV, latência e ablação
+- 25 Referências bibliográficas no padrão IEEE
 """
 
 import os
@@ -28,23 +29,6 @@ OUTPUT_DOCX = PROJECT_ROOT / "VIABILIDADE_VISAO_COMPUTACIONAL_CAFE_ARARA.docx"
 XSLT_PATH = r"C:\Program Files\Microsoft Office\root\Office16\MML2OMML.XSL"
 _xslt_doc = etree.parse(XSLT_PATH)
 _transform = etree.XSLT(_xslt_doc)
-
-
-def add_math_equation(doc, mathml_str):
-    """
-    Converte expressão MathML em OMML (Office Math Markup Language)
-    nativa do Word e insere no parágrafo centralizado, correspondendo exatamente
-    ao recurso nativo 'Inserir Fórmula Matemática' do Microsoft Word.
-    """
-    tree = etree.fromstring(mathml_str.strip())
-    omml = _transform(tree)
-    omml_bytes = etree.tostring(omml, encoding="utf-8")
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_before = Pt(4)
-    p.paragraph_format.space_after = Pt(4)
-    p._p.append(parse_xml(omml_bytes))
-    return p
 
 
 def set_cell_margins(cell, top=80, bottom=80, left=100, right=100):
@@ -78,6 +62,23 @@ def set_table_borders(table, color="B0B0B0"):
     tblPr.append(tblBorders)
 
 
+def add_math_equation(doc, mathml_str):
+    """
+    Converte expressão MathML em OMML (Office Math Markup Language)
+    nativa do Word e insere no parágrafo centralizado, correspondendo exatamente
+    ao recurso nativo 'Inserir Fórmula Matemática' do Microsoft Word.
+    """
+    tree = etree.fromstring(mathml_str.strip())
+    omml = _transform(tree)
+    omml_bytes = etree.tostring(omml, encoding="utf-8")
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(4)
+    p.paragraph_format.space_after = Pt(4)
+    p._p.append(parse_xml(omml_bytes))
+    return p
+
+
 def build_paper():
     doc = docx.Document()
 
@@ -106,8 +107,8 @@ def build_paper():
     p_title.paragraph_format.space_before = Pt(0)
     p_title.paragraph_format.space_after = Pt(14)
     run_title = p_title.add_run(
-        "Viabilidade da Visão Computacional na Classificação Morfológica e "
-        "Contagem do Nível de Maturação do Café Arara"
+        "Viabilidade da Visão Computacional na Contagem e na "
+        "Classificação Colorimétrica do Estágio de Maturação do Café Arara"
     )
     run_title.font.name = 'Times New Roman'
     run_title.font.size = Pt(18)
@@ -126,26 +127,25 @@ def build_paper():
     p_a1 = c_a1.paragraphs[0]
     p_a1.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_a1.paragraph_format.space_after = Pt(0)
-    r1 = p_a1.add_run("Luiz [PREENCHER: Sobrenome Completo]\n")
+    r1 = p_a1.add_run("Luiz Gustavo Souza Santos\n")
     r1.bold = True
     r1.font.size = Pt(10)
     p_a1.add_run(
-        "Engenharia de Sistemas / Ciência da Computação\n"
-        "[PREENCHER: Nome da Instituição - Sigla]\n"
-        "[PREENCHER: Cidade - UF], Brasil\n"
-        "[PREENCHER: e-mail do autor]"
+        "Universidade Estadual de Montes Claros - UNIMONTES\n"
+        "Montes Claros - MG, Brasil\n"
+        "luiz.santos@edu.unimontes.br"
     ).font.size = Pt(8.5)
 
     p_a2 = c_a2.paragraphs[0]
     p_a2.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_a2.paragraph_format.space_after = Pt(0)
-    r2 = p_a2.add_run("[PREENCHER: Nome do Orientador]\n")
+    r2 = p_a2.add_run("Alysson Steve Lacerda\n")
     r2.bold = True
     r2.font.size = Pt(10)
     p_a2.add_run(
         "[PREENCHER: Departamento / Coordenação]\n"
-        "[PREENCHER: Nome da Instituição - Sigla]\n"
-        "[PREENCHER: Cidade - UF], Brasil\n"
+        "Universidade Estadual de Montes Claros - UNIMONTES\n"
+        "Montes Claros - MG, Brasil\n"
         "[PREENCHER: e-mail do orientador]"
     ).font.size = Pt(8.5)
 
@@ -162,12 +162,11 @@ def build_paper():
     sec2.left_margin = Inches(0.71)
     sec2.right_margin = Inches(0.71)
 
-    # Configurar DUAS COLUNAS no XML
     sectPr = sec2._sectPr
     cols = sectPr.xpath('./w:cols')
     if cols:
         cols[0].set(qn('w:num'), '2')
-        cols[0].set(qn('w:space'), '360')  # 0.25 polegada entre colunas
+        cols[0].set(qn('w:space'), '360')
     else:
         new_cols = OxmlElement('w:cols')
         new_cols.set(qn('w:num'), '2')
@@ -229,20 +228,17 @@ def build_paper():
     r_rb = p_res.add_run("Resumo—")
     r_rb.bold = True
     p_res.add_run(
-        "A determinação precisa do ponto ótimo de colheita do café é determinante para a produção de cafés especiais, "
-        "impactando diretamente o rendimento econômico e o perfil sensorial da bebida na xícara. Na cultivar Coffea arabica cv. Arara, "
-        "esse diagnóstico apresenta particularidade botânica marcante: os frutos maduros desenvolvem coloração estritamente amarelada a âmbar, "
-        "o que invalida modelos clássicos de visão computacional calibrados exclusivamente para cultivares de casca vermelha (como Catuaí e Mundo Novo). "
-        "Este artigo investiga e comprova a viabilidade técnica da visão computacional para a classificação morfológica e contagem automatizada do "
-        "nível de maturação do Café Arara. A solução proposta integra redes neurais convolucionais profundas (YOLOv8) a um pipeline híbrido composto por "
-        "fatiamento em grade (tiling 1:1) com janelamento deslizante de alta densidade, supressão de não-máximos global e um discriminador morfológico "
-        "por Machine Learning (ExtraTreesClassifier com 14 descritores físico-geométricos e espectrais). O método viabiliza a contagem exaustiva de "
-        "milhares de frutos justapostos em bandejas de campo e elimina integralmente falsos positivos decorrentes da estrutura de madeira "
-        "do ripado, tocos e solo da lavoura. A classificação espectral segmenta a amostra em cinco estágios fenológicos: Verde, Cereja I, Cereja II, "
-        "Passa e Seco, estabelecendo formalmente a transição entre Cereja II e Passa como o ápice da qualidade sensorial (pico de açúcares solúveis/grau Brix). "
-        "Experimentos com amostras reais de campo demonstraram a detecção exata de 4.214 frutos em bandeja experimental com 100% de cobertura espacial (sem cortes forçados de eixo) "
-        "e latência mediana de 1,21 s em CPU padrão. Um painel web moderno (Starlette/React) foi construído para fornecer apoio à decisão agronômica com "
-        "diagnósticos automatizados, visualização interativa com bounding boxes, cronometria analítica e exportação de relatórios em CSV."
+        "A determinação do ponto de colheita do café influencia o rendimento econômico e o perfil sensorial da bebida. "
+        "Na cultivar Coffea arabica cv. Arara, os frutos maduros assumem coloração amarelada, o que limita o uso direto de modelos "
+        "de visão computacional calibrados para cultivares de casca vermelha. Este trabalho apresenta e avalia, como prova de conceito, "
+        "um pipeline para contagem e classificação colorimétrica do estágio de maturação de frutos de café Arara em bandejas de amostragem. "
+        "O pipeline combina detecção com YOLOv8 (passe global e fatiamento em grade 1:1 com sobreposição), supressão de não-máximos global "
+        "e um filtro baseado em ExtraTreesClassifier, com 14 descritores geométricos e fotométricos, para reduzir detecções espúrias sobre madeira e solo. "
+        "Os frutos aceitos são classificados em cinco estágios (Verde, Cereja I, Cereja II, Passa e Seco) por limiares no espaço HSV. "
+        "Em um estudo de caso com uma bandeja de campo, o sistema detectou 4.214 frutos, dos quais 70,9% foram classificados como Cereja I e "
+        "25,9% como Cereja II ou Passa, com tempo mediano de processamento de 1,21 s em CPU. [Inserir: erro de contagem em relação à contagem manual, "
+        "precisão/recall da detecção e acurácia por estágio (Seção V).] Um painel web (Starlette/React) apresenta os resultados e um laudo de apoio à decisão. "
+        "Os resultados indicam a viabilidade técnica da abordagem como prova de conceito; a validação quantitativa em maior escala e a avaliação sensorial permanecem como trabalhos futuros."
     )
 
     p_kw = doc.add_paragraph()
@@ -250,27 +246,22 @@ def build_paper():
     r_kb = p_kw.add_run("Palavras-chave—")
     r_kb.bold = True
     r_kb.italic = True
-    p_kw.add_run("Visão computacional, Café Arara, classificação morfológica, YOLOv8, aprendizado contínuo, apoio à decisão, cafés especiais.")
+    p_kw.add_run("Visão computacional, café Arara, maturação, YOLOv8, contagem de frutos, apoio à decisão, cafés especiais.")
 
     p_abs = doc.add_paragraph()
     p_abs.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     r_ab = p_abs.add_run("Abstract—")
     r_ab.bold = True
     p_abs.add_run(
-        "Accurate determination of the optimal coffee harvest window is crucial for specialty coffee production, directly influencing "
-        "economic profitability and final beverage cup quality. In Coffea arabica cv. Arara, harvest assessment presents unique botanical "
-        "challenges, as ripe fruits exhibit a yellow-to-amber coloration, which completely invalidates conventional computer vision models "
-        "calibrated for traditional red-skinned cultivars (such as Catuaí and Mundo Novo). This paper investigates and demonstrates the "
-        "technical feasibility of computer vision for morphological classification and automated maturity counting of Arara coffee. The proposed "
-        "architecture combines deep convolutional neural networks (YOLOv8) with a hybrid pipeline comprising multi-scale global inference, "
-        "high-density 1:1 sliding window tiling, global non-maximum suppression, and an ExtraTrees Machine Learning morphological discriminator "
-        "trained on 14 physical, geometric, and spectral descriptors. The methodology resolves the challenge of counting thousands of closely packed "
-        "fruits on field sampling trays while rejecting spurious background detections on wooden drying rack slats, sticks, leaves, and ground surfaces. "
-        "Colorimetric spectrometry classifies fruits into five phenological stages: Green, Cherry I, Cherry II, Raisin (Passa), and Dry, defining "
-        "the transition between Cherry II and Raisin as the peak sensory quality (maximum Brix sugar concentration). Experimental validation on "
-        "field samples confirmed the accurate counting of 4,214 fruits on an experimental tray with 100% spatial coverage (no coordinate cropping) "
-        "and a median inference latency of 1.21 s on commodity CPU hardware. A decision-support web dashboard (Starlette/React) was developed to "
-        "provide automated agronomic diagnostics, interactive bounding-box inspection, real-time chronometry, and CSV reporting."
+        "Determining the coffee harvest point affects economic yield and cup quality. In Coffea arabica cv. Arara, ripe fruits turn yellow, "
+        "which limits the direct use of computer vision models calibrated for red-fruited cultivars. This paper presents and evaluates, as a proof "
+        "of concept, a pipeline for counting and colorimetric ripeness-stage classification of Arara coffee fruits on sampling trays. The pipeline "
+        "combines YOLOv8 detection (a global pass plus 1:1 grid tiling with overlap), global non-maximum suppression, and an ExtraTrees filter "
+        "using 14 geometric and photometric descriptors to reduce spurious detections on wood and soil. Accepted fruits are assigned to five stages "
+        "(Green, Cherry I, Cherry II, Raisin, Dry) using HSV thresholds. In a single-tray case study, the system detected 4,214 fruits (70.9% Cherry I; "
+        "25.9% Cherry II or Raisin) with a median processing time of 1.21 s on a CPU. [Insert: counting error against manual counts, precision/recall, "
+        "and per-stage accuracy.] A web dashboard (Starlette/React) presents the results and a decision-support report. The results indicate technical "
+        "feasibility as a proof of concept; large-scale quantitative validation and sensory evaluation remain future work."
     )
 
     p_akw = doc.add_paragraph()
@@ -278,7 +269,7 @@ def build_paper():
     r_akb = p_akw.add_run("Keywords—")
     r_akb.bold = True
     r_akb.italic = True
-    p_akw.add_run("computer vision, Arara coffee, morphological classification, YOLOv8, continuous learning, decision support, specialty coffees.")
+    p_akw.add_run("computer vision, Arara coffee, ripeness, YOLOv8, fruit counting, decision support, specialty coffee.")
 
     # ══════════════════════════════════════════════════════════════════════════
     # I. INTRODUÇÃO
@@ -286,66 +277,60 @@ def build_paper():
     add_sec_head("I. INTRODUÇÃO")
 
     add_p(
-        "A cafeicultura brasileira vive um período de profunda transformação tecnológica e mercadológica. Historicamente pautada pelo volume e "
-        "pela comercialização de commodities em larga escala, a cadeia produtiva nacional tem direcionado investimentos substanciais para o nicho "
-        "de cafés especiais (Specialty Coffees). Nesse segmento, cada saca comercializada pode atingir ágios superiores a 100% sobre a cotação da bolsa, "
-        "desde que atinja pontuações acima de 80 pontos na metodologia sensorial padronizada da Specialty Coffee Association (SCA) [1]."
+        "A cafeicultura brasileira tem direcionado investimentos crescentes ao nicho de cafés especiais, nos quais lotes com pontuação "
+        "superior a 80 pontos na metodologia sensorial da Specialty Coffee Association (SCA) [1] alcançam preço diferenciado em relação ao "
+        "café comercial [incluir fonte de mercado com o ágio observado, p. ex., BSCA ou CEPEA/ESALQ]."
     )
 
     add_p(
-        "Dentre as cultivares introduzidas recentemente nas principais regiões cafeeiras do país (Sul de Minas, Cerrado Mineiro e Mogiana Paulista), "
-        "a cultivar Coffea arabica cv. Arara alcançou destaque extraordinário. Resultado do cruzamento natural entre o clone de Icatu e a variedade "
-        "Catuaí Amarelo, selecionada e estabilizada pela Fundação Procafé, a cultivar Arara combina produtividade média superior a 50 sacas por hectare, "
-        "tolerância à seca, imunidade genética à ferrugem alaranjada (Hemileia vastatrix) e à bacteriose (Pseudomonas syringae), além de elevado potencial "
-        "sensorial caracterizado por notas cítricas, florais e acentuada doçura de rapadura e frutas amarelas [2]."
+        "Entre as cultivares recentes, a Coffea arabica cv. Arara ganhou espaço em novas lavouras. Segundo a Fundação Procafé, ela se originou "
+        "de um cruzamento natural entre o Obatã e o Catuaí Amarelo (provavelmente com Icatu Amarelo), e se caracteriza por frutos amarelos, alto vigor, "
+        "resistência à ferrugem (Hemileia vastatrix), boa adaptação a clima seco, maturação tardia e potencial para bebidas de alta pontuação [2]."
     )
 
     add_p(
-        "Entretanto, a gestão agronômica da colheita do Café Arara enfrenta uma barreira fisiológica crítica: seus frutos maduros não adquirem a clássica "
-        "coloração vermelho-cereja das cultivares tradicionais, mas sim uma tonalidade amarela a amarelo-âmbar. Essa particularidade botânica desorienta "
-        "operadores de campo e invalida sistemas automatizados desenvolvidos para frutos vermelhos. A janela ideal de colheita do Arara é extremamente estreita. "
-        "Conforme pesquisas fisiológicas de maturação [3], o acúmulo máximo de açúcares solúveis (sacarose, frutose e glicose) e a síntese balanceada de ácidos "
-        "orgânicos ocorrem exatamente quando o fruto transita entre a maturidade plena amarela (estágio aqui classificado como Cereja II) e o princípio de "
-        "murchamento com início de secagem natural na planta (estágio Passa). Colheitas precipitadas, contendo mais de 20% a 30% de frutos verdes, resultam em "
-        "bebidas adstringentes, fenólicas e com amargor metálico; por outro lado, o atraso excessivo propicia a fermentação acética descontrolada e o "
-        "apodrecimento por fungos filamentosos, gerando frutos pretos e secos (estágio Seco) que desclassificam o lote comercialmente [4]."
+        "Entretanto, a gestão da colheita do Arara enfrenta uma particularidade: os frutos maduros não adquirem a coloração vermelho-cereja "
+        "das cultivares tradicionais, mas tons de amarelo a amarelo-âmbar. Isso dificulta o julgamento visual em campo e limita o uso direto de sistemas "
+        "automatizados desenvolvidos para frutos vermelhos. A sacarose continua a se acumular na semente até o fim da maturação, e frutos em estágio "
+        "avançado ficam suscetíveis a ataque microbiano e à formação de compostos indesejáveis [3], [4]. A relação entre estágio de maturação e qualidade "
+        "da bebida, contudo, depende da cultivar e de outros fatores [5]; por isso, a proporção de frutos em cada estágio é uma informação de apoio "
+        "à decisão de colheita, e não uma regra determinística. Em geral, colheitas com grande proporção de frutos verdes tendem a comprometer a bebida, "
+        "e o atraso excessivo favorece frutos secos e fermentações indesejáveis."
     )
 
     add_p(
-        "O método convencional adotado nas propriedades para mensurar o índice de maturação consiste na amostragem em balde de campo: colhe-se manualmente "
-        "um punhado aleatório de frutos da planta ou da derriça, espalha-se sobre uma lona e o técnico separa e conta de 100 a 200 frutos à mão. Trata-se de "
-        "uma prática rudimentar, morosa, sujeita à fadiga visual e com baixíssima significância estatística, visto que 200 grãos representam menos de "
-        "0,001% de uma lavoura com milhares de plantas. A automação da quantificação e classificação por visão computacional é, portanto, indispensável."
+        "O método convencional para estimar o índice de maturação consiste em colher manualmente um punhado de frutos, espalhá-los sobre uma lona e "
+        "separar e contar de 100 a 200 frutos à mão. Trata-se de uma prática morosa, sujeita à fadiga visual e ao viés do operador, e uma amostra pequena "
+        "pode não representar a variabilidade do talhão: a representatividade depende do plano de amostragem e do tamanho absoluto da amostra, e não da "
+        "fração da lavoura amostrada. A automação da contagem e da classificação por visão computacional permite processar amostras bem maiores com um critério uniforme."
     )
 
     add_p(
-        "Contudo, a transposição da visão computacional para a amostragem em larga escala do café em bandejas coletivas esbarra em três problemas técnicos "
-        "fundamentais: "
-        "(1) O problema da contagem em densidade extrema: em uma única bandeja de amostragem (área aproximada de 1,0 m × 0,8 m), depositam-se entre 8.000 e "
-        "15.000 frutos justapostos. Uma imagem digital 4K (3840×2160 pixels) precisa ser processada sem que o redimensionamento convencional de redes "
-        "neurais colapse os grãos em meros borrões sub-pixel; "
-        "(2) O problema do ruído estrutural de fundo: na rotina das fazendas, as bandejas e terreiros suspensos são construídos com ripas de madeira rústica, "
-        "sarrafos, telas metálicas e apoios de concreto ou asfalto. Sob iluminação solar natural, as ranhuras, nós da madeira e imperfeições do chão "
-        "produzem assinaturas espectrais muito semelhantes às de frutos secos ou amarelos, gerando centenas de detecções falsas quando se opera com "
-        "confianças calibradas para sensibilidade máxima; e "
-        "(3) O problema do apoio à decisão: contagens brutas não fornecem respostas práticas ao produtor rural. Saber que existem '7.450 grãos amarelos' não "
-        "informa se a colheitadeira mecânica deve entrar no talhão hoje ou na próxima semana."
+        "Contudo, a aplicação da visão computacional a bandejas coletivas de café esbarra em três problemas técnicos: "
+        "(1) a contagem em densidade extrema: em uma bandeja de amostragem (área aproximada de 1,0 m × 0,8 m [confirmar dimensões]) podem ser depositados "
+        "vários milhares de frutos justapostos (4.214 na bandeja analisada neste trabalho), e uma imagem 4K (3840×2160 pixels) precisa ser processada sem "
+        "que o redimensionamento para a entrada da rede reduza cada fruto a poucos pixels; "
+        "(2) o ruído estrutural de fundo: bandejas e terreiros suspensos são construídos com ripas de madeira, sarrafos, telas e apoios de concreto ou asfalto, "
+        "cujas ranhuras, nós e imperfeições, sob luz solar natural, têm assinaturas de cor semelhantes às de frutos secos ou amarelos e geram numerosas "
+        "detecções falsas quando se opera com limiares de confiança baixos; e "
+        "(3) o apoio à decisão: contagens brutas não respondem à pergunta prática do produtor. Saber que existem “7.450 grãos amarelos” não informa se a "
+        "colheita deve ocorrer hoje ou na próxima semana."
     )
 
     add_p(
-        "Diante desse contexto, formula-se a seguinte questão de pesquisa: É viável, por meio da conjugação entre deep learning e discriminadores morfológicos "
-        "em visão computacional, realizar a contagem exaustiva de milhares de frutos de Café Arara por tomada fotográfica (como a amostragem de 4.214 frutos avaliada), "
-        "eliminando ruídos de madeira e chão, e estruturar esses dados em um painel web que auxilie a tomada de decisão agronômica sobre o ponto ótimo de colheita?"
+        "Diante desse contexto, formula-se a seguinte questão de pesquisa: é viável, combinando detecção por aprendizado profundo e um filtro de aprendizado "
+        "de máquina, contar milhares de frutos de Café Arara em uma única fotografia de bandeja (como os 4.214 frutos do estudo de caso), reduzindo as detecções "
+        "espúrias de madeira e solo, e organizar o resultado em um painel web que apoie a decisão sobre o ponto de colheita?"
     )
 
     add_p(
-        "Para responder a essa questão, este artigo estabelece como objetivo geral conceber, implementar e avaliar um artefato computacional completo para a "
-        "classificação morfológica e contagem do nível de maturação do Café Arara. Os objetivos específicos compreendem: "
-        "(i) Projetar um pipeline híbrido de inferência baseado no modelo YOLOv8 que combine fatiamento em grade (tiling 1:1) com passe global; "
-        "(ii) Desenvolver um discriminador morfológico baseado em Machine Learning (ExtraTrees) fundado em propriedades 3D convexas e gradiente radial convergente; "
-        "(iii) Implementar a classificação espectral nos cinco estágios fenológicos (Verde, Cereja I, Cereja II, Passa e Seco), identificando o ápice da qualidade; "
-        "(iv) Integrar um mecanismo de aprendizado contínuo (Active Learning) assíncrono para refinamento neural incremental sem travar a interface; e "
-        "(v) Desenvolver um painel web reativo (React 18 / Starlette) e avaliar seu desempenho computacional e sua usabilidade operacional."
+        "O objetivo geral é conceber, implementar e avaliar, como prova de conceito, um artefato computacional para contagem e classificação colorimétrica "
+        "do estágio de maturação do Café Arara. Os objetivos específicos são: "
+        "(i) projetar um pipeline híbrido de inferência com YOLOv8, combinando fatiamento em grade (tiling 1:1) e passe global; "
+        "(ii) desenvolver um filtro baseado em ExtraTrees, com descritores fotométricos e geométricos de superfície convexa, para reduzir detecções espúrias de madeira e solo; "
+        "(iii) implementar a classificação colorimétrica em cinco estágios (Verde, Cereja I, Cereja II, Passa e Seco); "
+        "(iv) integrar um mecanismo de ajuste fino incremental e assíncrono do detector; e "
+        "(v) desenvolver um painel web (React 18 / Starlette) e avaliar seu desempenho computacional [se o SUS for aplicado, reincluir “e sua usabilidade”]."
     )
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -355,44 +340,43 @@ def build_paper():
 
     add_subsec_head("A. Fisiologia e Maturação do Café Arara (cv. Arara)")
     add_p(
-        "O fruto do cafeeiro é botanicamente uma drupa composta por exocarpo (casca fina externa), mesocarpo (camada carnosa e mucilaginosa rica em açúcares "
-        "redutores e pectina), endocarpo ou pergaminho (tecido córneo protetor) e duas sementes elipsoidais com fenda longitudinal [5]. Na maturação dos "
-        "frutos tradicionais de casca vermelha, a clorofila verde dá lugar a antocianinas como cianidina-3-glucosídeo. No caso da cultivar Arara, no entanto, "
-        "a rota biossintética interrompe o acúmulo de antocianinas e acumula carotenoides (como luteína e betacaroteno), gerando um espectro que varia de "
-        "verde-oliva a amarelo-âmbar brilhante."
+        "O fruto do cafeeiro é botanicamente uma drupa, composta por exocarpo (casca), mesocarpo (camada carnosa e mucilaginosa), endocarpo (pergaminho) "
+        "e duas sementes [3]. Durante a maturação, a cor da casca muda do verde para o vermelho ou o amarelo, conforme a cultivar [4]. Nos frutos vermelhos, "
+        "a mudança está associada ao acúmulo de antocianinas; nos frutos amarelos, como os do Arara, a cor final resulta da ausência desse acúmulo [incluir "
+        "fonte sobre pigmentos em cultivares de fruto amarelo]."
     )
 
     add_p(
-        "A dinâmica fisiológica da mucilagem é o termômetro biológico da qualidade sensorial. A evolução do teor de sólidos solúveis "
-        "(grau Brix), da acidez titulável e do potencial sensorial SCA ao longo dos cinco estágios definidos neste trabalho caracteriza-se por: "
-        "\n1. Verde: exocarpo verde rígido, mesocarpo fibroso sem açúcares solúveis (~10° Brix), alta concentração de ácidos clorogênicos livres e "
-        "taninos adstringentes que conferem nota áspera e herbácea à bebida (< 70 pontos SCA); "
-        "\n2. Cereja I: início da síntese de pigmentos amarelos com descoloração parcial da clorofila (~16° Brix), mucilagem em expansão e transição "
-        "fisiológica intermediária (~78 pontos SCA); "
-        "\n3. Cereja II: casca amarela-ouro a âmbar brilhante, mucilagem totalmente intumescida, teor de açúcares no auge vegetativo (20 a 22° Brix), "
-        "acidez cítrica/málica balanceada e consistência gelatinosa firme (86 a 88 pontos SCA); "
-        "\n4. Passa: perda inicial de água livre através da cutícula da casca, tornando-a rugosa e de tonalidade âmbar-alaranjada, com concentração máxima "
-        "de sacarose por desidratação osmótica (22 a 24° Brix) e desenvolvimento de corpo aveludado e notas amendoadas (88 a 90 pontos SCA); "
-        "\n5. Seco: dessecação avançada com endurecimento do pericarpo e escurecimento oxidativo (frutos pretos e boias tardios), com risco iminente de "
-        "fermentação acética secundária e perda de sacarose por degradação microbiológica [6]."
+        "A literatura costuma distinguir estágios de maturação pela cor da casca, por exemplo: verde, amarelado (semimaduro), cereja (maduro), supermaduro "
+        "e preto (seco) [4]. Neste trabalho, adotam-se cinco estágios definidos por critério visual e adaptados ao Arara:"
+        "\n1. Verde: casca verde e firme, fruto imaturo;"
+        "\n2. Cereja I: casca em transição do verde para o amarelo, maturação inicial (estágio pré-pico);"
+        "\n3. Cereja II: casca amarelo-ouro a âmbar, fruto maduro;"
+        "\n4. Passa: início de desidratação, com casca rugosa e de tom âmbar-alaranjado;"
+        "\n5. Seco: dessecação avançada e escurecimento (frutos pretos ou secos na planta), com risco de fermentação [4]."
+    )
+
+    add_p(
+        "A divisão em Cereja I e II é uma adaptação do autor ao Arara e não um padrão da literatura, que mais frequentemente usa verde, verde-cana, cereja, "
+        "passa e seco. Como hipótese de trabalho, assume-se que a faixa Cereja II–Passa concentra o ápice do potencial de qualidade, pois a sacarose se acumula "
+        "até o fim da maturação [3], [4]. Há, porém, evidências de que a relação entre maturação e qualidade da bebida varia entre cultivares e depende de outros "
+        "fatores [5], [6], e esta hipótese não foi testada por análise sensorial neste trabalho."
     )
 
     add_subsec_head("B. Modelos Neurais Convolucionais e Arquitetura YOLOv8")
     add_p(
-        "A detecção de objetos em visão computacional moderna é dominada por redes neurais convolucionais profundas (CNNs). Dentre estas, a arquitetura "
-        "YOLOv8 desenvolvida pela Ultralytics [7] representa o estado da arte para inferência em tempo real. O YOLOv8 adota uma abordagem anchor-free "
-        "(sem âncoras predefinidas), que prevê diretamente o centro do objeto e o deslocamento de suas caixas delimitadoras, reduzindo a complexidade de "
-        "hiperparâmetros em comparação com arquiteturas mais antigas como YOLOv4 ou Faster R-CNN."
+        "A detecção de objetos em visão computacional é dominada por redes neurais convolucionais (CNNs). Entre elas, o YOLOv8, da Ultralytics, é um detector "
+        "em tempo real que adota a abordagem anchor-free, prevendo diretamente o centro do objeto e as dimensões da caixa, o que reduz a quantidade de hiperparâmetros "
+        "em relação a detectores baseados em âncoras. A Ultralytics não publicou um artigo científico formal sobre o YOLOv8 e recomenda a citação do próprio software [7]."
     )
 
     add_p(
-        "O backbone do YOLOv8 utiliza blocos convolucionais modificados C2f (Cross-Stage Partial com dois blocos de fusão residual), que maximizam o fluxo "
-        "de gradiente sem degradar a capacidade representativa da rede. O módulo de detecção utiliza uma cabeça desacoplada (decoupled head), separando as "
-        "perdas de classificação (usando Binary Cross-Entropy) das perdas de regressão de caixa delimitadora, que combinam a perda Complete IoU (CIoU) com "
-        "a Distribution Focal Loss (DFL) [7]. A formulação da perda CIoU incorpora a distância euclidiana normalizada entre centros de caixas, a sobreposição "
-        "de área e a coerência da razão de aspecto entre a caixa predita e a caixa de referência de treinamento:"
+        "O backbone utiliza blocos C2f (Cross Stage Partial bottleneck com duas convoluções) e a detecção usa uma cabeça desacoplada, que separa a classificação "
+        "(perda de entropia cruzada binária) da regressão da caixa, a qual combina a perda Complete IoU (CIoU) [8] com a Distribution Focal Loss (DFL) [9]. "
+        "A perda CIoU incorpora a sobreposição, a distância normalizada entre os centros e a coerência da razão de aspecto:"
     )
 
+    # FÓRMULA 1: PERDA CIOU (OMML NATIVO)
     add_math_equation(doc, """<math xmlns="http://www.w3.org/1998/Math/MathML">
       <mrow>
         <msub><mi mathvariant="script">L</mi><mtext>CIoU</mtext></msub>
@@ -406,73 +390,70 @@ def build_paper():
     </math>""")
 
     add_p(
-        "onde ρ representa a distância euclidiana dos centros, c é a diagonal do menor retângulo envolvente e α · v "
-        "pondera a consistência de forma geométrica."
+        "onde b e b^gt são as caixas predita e de referência, ρ é a distância euclidiana entre seus centros, c é a diagonal do menor retângulo que envolve "
+        "ambas, v mede a consistência da razão de aspecto e α é o peso de v."
     )
 
     add_p(
-        "A despeito de sua excelência técnica, a aplicação padrão do YOLOv8 impõe um redimensionamento obrigatório da imagem de entrada para uma dimensão "
-        "quadrada típica (imgsz = 640×640 pixels). Quando uma imagem fotográfica de alta resolução de campo (ex: 3840×2160 pixels, contendo milhares de frutos "
-        "de café, como a bandeja de 4.214 frutos avaliada neste trabalho) é redimensionada diretamente para 640×640, a área média ocupada por cada grão na "
-        "imagem é reduzida drasticamente de centenas de pixels para menos de 6 pixels! Em tal nível de compressão, os detalhes visuais finos (curvatura do fruto, "
-        "fenda do pericarpo e textura da casca) são degradados, impedindo qualquer contagem consistente [8]."
+        "O uso padrão do YOLOv8 redimensiona a imagem de entrada para uma dimensão quadrada típica (imgsz = 640×640 pixels). Quando uma fotografia de alta "
+        "resolução (ex.: 3840×2160 pixels, com milhares de frutos) é redimensionada diretamente para 640×640, a área da imagem é reduzida cerca de 20 vezes e "
+        "a razão de aspecto é distorcida. Com milhares de frutos no quadro, cada fruto passa a ocupar, no máximo, algumas dezenas a poucas centenas de pixels, "
+        "e detalhes finos (curvatura, fenda e textura da casca) se degradam, o que prejudica a detecção de objetos pequenos [10]."
     )
 
     add_subsec_head("C. Fatiamento em Grade (Tiling / SAHI) e Fusão Espacial")
     add_p(
-        "Para preservar a resolução espacial de objetos minúsculos em imagens gigapixel, a literatura propõe técnicas de inferência fatiada, como o "
-        "Slicing Aided Hyper Inference (SAHI) introduzido por Akyon et al. [9]. O princípio básico fundamenta-se em decompor a matriz da imagem de alta "
-        "resolução em múltiplos ladrilhos ou blocos menores de dimensão compatível com a entrada da rede neural (ex: 640×640 pixels) com uma sobreposição "
-        "controlada (passo ou stride menor que o tamanho da janela)."
+        "Para preservar a resolução de objetos pequenos em imagens grandes, propõe-se a inferência fatiada, como o Slicing Aided Hyper Inference (SAHI) [10]. "
+        "A imagem é decomposta em blocos de tamanho compatível com a entrada da rede (ex.: 640×640 pixels), com sobreposição controlada (passo menor que o tamanho da janela)."
     )
 
     add_p(
-        "Contudo, a transposição dessa estratégia para bandejas coletivas de café impõe desafios matemáticos e de contorno que implementações genéricas "
-        "não atendem: se os ladrilhos não cobrirem exatamente as bordas físicas da bandeja, milhares de frutos periféricos são descartados; além disso, "
-        "frutos situados na fronteira de corte entre dois ladrilhos vizinhos geram caixas parciais truncadas que induzem duplicidade de contagem. Torna-se "
-        "mandatório empregar algoritmos de Supressão de Não-Máximos (NMS) Global em coordenadas mundiais unificadas, garantindo que propostas sobrepostas "
-        "sejam avaliadas conjuntamente após o remapeamento geométrico dos offsets espaciais."
+        "Em bandejas de café, porém, é preciso tratar dois problemas: se os blocos não cobrirem exatamente as bordas físicas da bandeja, frutos periféricos "
+        "são descartados; e frutos na fronteira entre blocos vizinhos geram caixas truncadas e contagem em duplicidade. Por isso, aplica-se a Supressão de Não-Máximos "
+        "(NMS) global, em coordenadas unificadas da imagem original, após o remapeamento dos deslocamentos de cada bloco."
     )
 
-    add_subsec_head("D. Morfologia Esférica 3D e Discriminação de Madeira/Chão")
+    add_subsec_head("D. Filtro Fotométrico de Superfície Convexa: Discriminação de Madeira e Solo")
     add_p(
-        "A detecção de pequenos objetos em agricultura computacional é frequentemente assolada por falsos positivos provocados pelo background [10]. "
-        "Em lavouras e terreiros, as superfícies de apoio (ripas de madeira do terreiro suspenso, estacas de contenção e o piso de asfalto ou concreto) "
-        "apresentam irregularidades texturais: veios de madeira seca, nós escurecidos e ranhuras que exibem matizes idênticos aos frutos secos ou maduros. "
-        "Quando o operador ajusta o limiar de confiança do modelo neural para valores baixos (ex: conf = 0,04) visando detectar até os frutos mais sombreados, "
-        "a rede convolucional começa a marcar dezenas de pequenos retângulos sobre a madeira lisa."
+        "A detecção de objetos pequenos em ambientes agrícolas é frequentemente afetada por falsos positivos provocados pelo fundo. Em terreiros e bandejas, "
+        "as superfícies de apoio (ripas de madeira, estacas, piso de concreto ou asfalto) têm veios, nós e ranhuras com matizes semelhantes aos de frutos secos "
+        "ou maduros. Quando o limiar de confiança é baixo (ex.: conf = 0,02), para detectar também frutos sombreados, a rede passa a marcar pequenos retângulos sobre a madeira."
     )
 
     add_p(
-        "A solução clássica de descartar caixas por corte arbitrário de coordenadas espaciais (ex: eliminar 18% da parte superior da foto, onde comumente fica "
-        "a tábua superior da bandeja) é frágil e inaceitável em produção, pois em fotografias tiradas com enquadramento justo, a faixa superior contém "
-        "frutos legítimos que acabam sumariamente eliminados da contagem estatística."
+        "A solução de descartar caixas por corte arbitrário de coordenadas (ex.: eliminar 18% da parte superior da foto, onde costuma ficar a tábua superior da bandeja) "
+        "é frágil, pois em fotografias com enquadramento justo a faixa superior contém frutos legítimos, que seriam removidos da contagem."
     )
 
     add_p(
-        "Para solucionar esse impasse de forma determinística e invariante a enquadramento, este trabalho recorre aos princípios da fotometria esférica e "
-        "da geometria diferencial [11]. Um fruto de café, sendo um esferoide tridimensional convexo, possui assinatura lumínica característica sob iluminação "
-        "ambiente: (i) O centro do fruto atua como ápice do domo reflexivo, apresentando maior intensidade luminosa média; (ii) As quatro bordas perimétricas "
-        "apresentam sombreamento de contato decorrente da declividade esférica do fruto e da oclusão mútua por frutos adjacentes; e (iii) O gradiente vetorial "
-        "espacial aponta concentricamente para o centro do fruto. Em contrapartida, ripas de madeira e manchas no chão são superfícies tabulares planas com "
-        "textura linear unidirecional e gradiente convergente nulo. A modelagem matemática dessas diferenças fornece a base para um classificador de Machine "
-        "Learning extremamente rápido e acurado."
+        "Para tratar o problema sem depender do enquadramento, este trabalho emprega descritores fotométricos de superfície convexa, calculados com operadores "
+        "clássicos de gradiente (Sobel) e Laplaciano [11]. Um fruto de café, aproximadamente esferoidal e convexo, tende a apresentar sob luz ambiente: "
+        "(i) maior intensidade média no centro; (ii) sombreamento nas bordas, pela curvatura e pela oclusão por frutos vizinhos; e (iii) gradientes de intensidade "
+        "que convergem para o centro. Ripas de madeira e manchas no chão são superfícies aproximadamente planas, com textura linear e gradiente convergente fraco. "
+        "Trata-se de uma hipótese heurística, avaliada empiricamente (Seção V), e não derivada de um modelo fotométrico formal."
     )
 
     add_subsec_head("E. Sistemas de Apoio à Decisão e Avaliação Ergonômica")
     add_p(
-        "O conceito de Sistemas de Apoio à Decisão (SAD) na agricultura visa transformar dados brutos de sensoriamento em conhecimento acionável [12]. "
-        "Conforme demonstrado por Sarikaya et al. [13], painéis de controle e dashboards não devem sobrecarregar o usuário com excesso de parâmetros e números "
-        "isolados. Em termos ergonômicos e perceptivos, o produtor precisa de uma hierarquia visual clara: indicadores com codificação semântica de cores, "
-        "diagnósticos textuais inequívocos (ex: 'Lote no Ápice da Qualidade', 'Aguardar Maturação') e mecanismos de auditoria visual imediata (capacidade de "
-        "ligar e desligar as caixas delimitadoras para conferir visualmente a detecção contra a imagem real)."
+        "Sistemas de Apoio à Decisão (SAD) na agricultura visam transformar dados brutos de sensoriamento em informação acionável [12], [13]. Em sistemas voltados "
+        "ao produtor, é desejável uma hierarquia visual clara, com indicadores codificados por cor, diagnóstico textual objetivo e a possibilidade de auditar "
+        "visualmente as detecções (ligar e desligar as caixas delimitadoras sobre a imagem). Dashboards são interfaces que consolidam indicadores visuais para apoiar "
+        "decisões e assumem formas bastante variadas [14]."
     )
 
     add_p(
-        "A avaliação da qualidade de uso de um sistema computacional apoia-se nas normas internacionais de usabilidade (ISO 9241-11) [14], que definem eficácia "
-        "(se o usuário conclui o objetivo), eficiência (tempo e esforço despendidos) e satisfação subjetiva. O questionário System Usability Scale (SUS) "
-        "proposto por Brooke [15] e traduzido para o Brasil por Lourenço et al. [16] constitui o instrumento mais consolidado na literatura para quantificar "
-        "a aceitação de ferramentas tecnológicas no campo."
+        "A qualidade de uso de um sistema pode ser descrita, segundo a ISO 9241-11 [15], por eficácia, eficiência e satisfação. Para a satisfação, o System Usability Scale "
+        "(SUS) [16], com versão para o português do Brasil [17], é um instrumento amplamente utilizado. [O SUS ainda não foi aplicado neste trabalho: aplicar com usuários "
+        "reais e reportar n e pontuação, ou manter como trabalho futuro e retirar as menções a usabilidade dos objetivos e da Tabela I.]"
+    )
+
+    add_subsec_head("F. Trabalhos Relacionados em Visão Computacional para Café")
+    add_p(
+        "Ramos et al. [18] desenvolveram um sistema de visão de máquina para contar frutos de café em ramos a partir de imagens de dispositivo móvel sob iluminação "
+        "não controlada, comparando a contagem automática com a contagem manual. Bazame et al. [19] propuseram um método para detectar, classificar e mapear frutos "
+        "de café durante a colheita com visão computacional. Esses trabalhos tratam de frutos em ramos ou em fluxo de colheita [confirmar quais cultivares foram estudadas]. "
+        "A contribuição deste trabalho é a contagem e a classificação por cor de frutos de uma cultivar amarela em bandejas densas, combinando fatiamento, NMS global "
+        "e um filtro de fundo. [Ampliar esta seção com uma tabela comparando dados, métricas e resultados de 4 a 6 trabalhos de visão computacional em café e confirmar a afirmação de lacuna.]"
     )
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -481,18 +462,18 @@ def build_paper():
     add_sec_head("III. MÉTODO")
 
     add_p(
-        "A pesquisa foi desenvolvida sob o paradigma da Design Science Research (DSR), abordagem metodológica rigorosa orientada à criação e avaliação "
-        "de artefatos inovadores que solucionem problemas organizacionais e operacionais complexos [17]. Seguiu-se o processo iterativo estruturado por "
-        "Peffers et al. [18], estruturado em seis macro-etapas: (1) Identificação do problema e motivação agronômica; (2) Definição dos objetivos do artefato; "
-        "(3) Projeto e desenvolvimento da solução em ciclos iterativos; (4) Demonstração empírica em laboratório e campo; (5) Avaliação de acurácia, latência "
-        "e usabilidade; e (6) Comunicação científica dos resultados."
+        "A pesquisa seguiu o paradigma da Design Science Research (DSR), orientado à criação e à avaliação de artefatos que resolvam problemas práticos [20]. "
+        "Adotou-se o processo iterativo de Peffers et al. [21], com seis etapas: (1) identificação do problema e motivação; (2) definição dos objetivos do artefato; "
+        "(3) projeto e desenvolvimento em ciclos iterativos; (4) demonstração; (5) avaliação de desempenho computacional [e de usabilidade, se o SUS for aplicado]; "
+        "e (6) comunicação dos resultados."
     )
 
     add_p(
-        "O desenvolvimento transcorreu em quatro ciclos evolutivos de engenharia e avaliação experimental, sintetizados na Tabela I."
+        "O desenvolvimento ocorreu em quatro ciclos, sintetizados na Tabela I. [A Tabela I é qualitativa: incluir, para cada ciclo, ao menos uma métrica "
+        "(ex.: detecções espúrias, erro de contagem, tempo de inferência).]"
     )
 
-    # TABELA I COMPLETA E DETALHADA
+    # TABELA I: CICLOS DSR
     p_t1 = doc.add_paragraph()
     p_t1.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_t1.paragraph_format.space_before = Pt(6)
@@ -506,41 +487,52 @@ def build_paper():
     tbl_c.autofit = False
     set_table_borders(tbl_c)
 
-    w_c = [Inches(0.6), Inches(2.9), Inches(3.3)]
+    w_c = [Inches(0.6), Inches(3.1), Inches(3.4)]
     for idx, (h, w) in enumerate(zip(["Ciclo", "Artefato Desenvolvido", "Motivação e Feedback para o Ciclo Seguinte"], w_c)):
         cell = tbl_c.cell(0, idx)
         cell.width = w
         set_cell_background(cell, "F1F5F9")
-        set_cell_margins(cell, 90, 90, 100, 100)
+        set_cell_margins(cell, 80, 80, 90, 90)
         p = cell.paragraphs[0]
         p.alignment = WD_ALIGN_PARAGRAPH.LEFT
         r = p.add_run(h)
         r.font.bold = True
-        r.font.size = Pt(8)
+        r.font.size = Pt(7.5)
 
-    ciclos = [
+    cycles_data = [
         ("1", "Treinamento preliminar de YOLOv8 em tiles isolados e protótipo exploratório em Streamlit.", "Baixa sensibilidade em frutos sobrepostos, tempo de inferência inadequado em 4K e travamentos na web."),
         ("2", "Implementação de fatiamento em grade (tiling 1:1) com stride fixo, NMS global e calibração de 3 cores (Verde, Amarelo, Preto).", "Proliferação de falsos positivos na estrutura de madeira da bandeja e perda de frutos no topo por corte de Y."),
         ("3", "Desenvolvimento do módulo Machine Learning (ExtraTrees) de grão vs. madeira, eliminação do corte de Y e expansão para 5 classes fenológicas.", "Falhas ao receber fotos de upload externo (dimensões < 640px) e bloqueio da interface durante o auto-treinamento."),
-        ("4", "Construção da arquitetura híbrida definitiva (Passe Global + Tiling 1:1), decodificação resiliente (Pillow), fine-tuning assíncrono em background e dashboard reativo (React 18).", "Consolidação e validação final com 100% de cobertura espacial, latência de 1,21 s e teste de usabilidade com questionário SUS.")
+        ("4", "Arquitetura híbrida (Passe Global + Tiling 1:1), decodificação resiliente (Pillow), ajuste fino assíncrono em segundo plano e dashboard reativo (React 18).", "Avaliação no estudo de caso (4.214 frutos; tempo mediano de 1,21 s em CPU). [Avaliação de usabilidade com SUS: aplicar ou remover.]")
     ]
 
-    for r_idx, row in enumerate(ciclos, start=1):
-        for c_idx, val in enumerate(row):
+    for r_idx, (c_num, c_art, c_mot) in enumerate(cycles_data, start=1):
+        cell_0 = tbl_c.cell(r_idx, 0)
+        cell_0.width = w_c[0]
+        set_cell_margins(cell_0, 60, 60, 90, 90)
+        p0 = cell_0.paragraphs[0]
+        p0.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r0 = p0.add_run(c_num)
+        r0.font.size = Pt(7.2)
+        r0.font.bold = True
+
+        for c_idx, val in [(1, c_art), (2, c_mot)]:
             cell = tbl_c.cell(r_idx, c_idx)
             cell.width = w_c[c_idx]
-            set_cell_margins(cell, 80, 80, 100, 100)
+            set_cell_margins(cell, 60, 60, 90, 90)
             p = cell.paragraphs[0]
             p.alignment = WD_ALIGN_PARAGRAPH.LEFT
             r = p.add_run(val)
-            r.font.size = Pt(7.5)
+            r.font.size = Pt(7.2)
 
     add_p(
-        "O conjunto amostral do projeto foi estruturado a partir de coletas reais realizadas em talhões de Café Arara na safra 2026. Foram adquiridas 15 fotografias "
-        "em resolução nativa 4K (3840×2160 e 4032×2268 pixels), registradas em condições controladas de terreiro suspenso com iluminação natural direta e "
-        "difusa, além de fotografias obtidas por smartphones em campo com foco em galhos e ramos pendulares. O ambiente de testes consistiu em hardware "
-        "comum de campo: notebook equipado com processador Intel Core i5-13420H (8 núcleos, 12 threads), 32 GB de memória RAM DDR5, SSD NVMe de 1 TB, "
-        "sistema operacional Windows 11 e interpretador Python 3.14 em ambiente isolado."
+        "As amostras de Café Arara foram coletadas na safra 2026 [informar local/talhão, altitude, data da colheita e método de coleta]. "
+        "Foram obtidas 15 fotografias [informar resolução e orientação de cada uma], registradas em terreiro suspenso com luz natural direta e difusa, "
+        "além de fotografias de smartphone em campo com foco em ramos. [Informar: quantas imagens foram usadas para treino, validação e teste; "
+        "quantos frutos foram anotados, por quem e com qual ferramenta; a variante do YOLOv8 (n/s/m) e os pesos iniciais (ex.: pré-treinados no COCO [25]); "
+        "e quantas amostras rotuladas treinaram o ExtraTrees e como foram rotuladas.] Neste artigo, o estudo de caso detalhado usa uma única bandeja "
+        "(Figura 1); [explicar o uso das demais imagens e, se possível, incluí-las na avaliação]. Os testes foram executados em um notebook com "
+        "Intel Core i5-13420H (8 núcleos, 12 threads), 32 GB de RAM DDR5, SSD NVMe de 1 TB, Windows 11 e Python 3.14, utilizando apenas CPU."
     )
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -550,47 +542,45 @@ def build_paper():
 
     add_subsec_head("A. Arquitetura do Sistema e Amostragem Experimental")
     add_p(
-        "A arquitetura global do sistema foi desenhada segundo o padrão de separação de responsabilidades (SoC) em quatro "
-        "módulos principais: "
-        "\n1. Camada de Apresentação e Interação Web: desenvolvida em React 18 moderno com Tailwind CSS e componentes reativos, fornecendo visualizador "
-        "de imagens em canvas com zoom/pan, renderização dinâmica de bounding boxes coloridas por classe, cronômetro em tempo real de inferência, gráficos "
-        "SVG de rosca (*donut chart*), painel de cartões KPI e alternador instantâneo para inspeção visual da imagem original; "
-        "\n2. Camada de Serviço e API RESTful: construída sobre o framework assíncrono Starlette (Python ASGI) e servidor Uvicorn de alto desempenho, "
-        "expondo rotas RESTful para inferência de visão (/api/analyze), acionamento de aprendizado contínuo (/api/learn), catálogo de amostras (/api/samples) "
-        "e tratamento do ícone oficial sem geração de erros 404 (/favicon.ico); "
-        "\n3. Camada do Motor de Inferência Híbrido: responsável por coordenar o passe global, o particionamento em grade de janelas 1:1, a predição convolucional "
-        "YOLOv8 em lotes paralelos (batch=8) e a fusão de detecções por NMS Global; e "
-        "\n4. Camada de Inteligência Morfológica e Aprendizado Contínuo: integra o classificador ExtraTrees de filtragem de madeira e solo, a espectrometria "
-        "HSV dos 5 estágios de maturação, o motor de diagnóstico agronômico e o laudo de colheita."
+        "A arquitetura foi organizada em quatro módulos, segundo o princípio de separação de responsabilidades:"
+        "\n1. Camada de Apresentação: desenvolvida em React 18 com Tailwind CSS, com visualizador de imagens em canvas (zoom e pan), "
+        "caixas delimitadoras coloridas por classe, cronômetro de inferência, gráfico de rosca (donut), cartões de indicadores (KPI) e alternador para inspeção da imagem original;"
+        "\n2. Camada de Serviço e API: construída sobre o framework assíncrono Starlette (Python ASGI) e o servidor Uvicorn, com rotas para inferência (/api/analyze), "
+        "ajuste fino (/api/learn), catálogo de amostras (/api/samples) e ícone do site (/favicon.ico);"
+        "\n3. Camada do Motor de Inferência Híbrido: coordena o passe global, o fatiamento em grade 1:1, a predição do YOLOv8 em lotes (batch = 8) "
+        "e a fusão das detecções por NMS global; e"
+        "\n4. Camada de Filtragem Fotométrica e Classificação: integra o classificador ExtraTrees [22] (implementado com scikit-learn [23]) para filtrar "
+        "madeira e solo, a classificação colorimétrica HSV nos 5 estágios, o motor de diagnóstico e o laudo de colheita."
     )
 
     add_p(
-        "Para a avaliação empírica do sistema em condições reais de campo, utilizou-se uma bandeja experimental de amostragem (Figura 1), na qual os frutos "
-        "de Café Arara recém-colhidos foram uniformemente distribuídos sobre uma esteira de amostragem delimitada por moldura de madeira, simulando o procedimento "
-        "operacional de aferição de colheita em propriedades cafeeiras."
+        "Para a avaliação em condições reais de campo, utilizou-se uma bandeja experimental de amostragem (Figura 1), na qual frutos de Café Arara "
+        "recém-colhidos foram distribuídos sobre uma esteira delimitada por moldura de madeira, simulando o procedimento de aferição de colheita em propriedades cafeeiras. "
+        "[Confirmar a resolução e a orientação originais da foto: a figura inserida é vertical (576×1024 px), diferente das fotos 4K em paisagem descritas na "
+        "Seção III. Confirmar também se os frutos estão em camada única.]"
     )
 
+    # FIGURA 1: BANDEJA ORIGINAL
     add_fig("fig1_bandeja_original.png", "Figura 1. Imagem fotográfica de campo da bandeja experimental de Café Arara: disposição densa dos frutos sobre a esteira delimitada por moldura de madeira para amostragem e contagem computacional.", width_in=2.5)
 
     add_subsec_head("B. Pipeline de Inferência Híbrida e Detecção Densa")
     add_p(
-        "O pipeline de visão computacional opera através de um fluxo híbrido adaptativo desenhado para garantir que tanto fotos "
-        "de câmeras de alta resolução (bandejas coletivas 4K) quanto fotografias de upload de menor resolução ou tiradas de perto (close-up) sejam processadas "
-        "sem nenhuma perda de frutos (Figura 2)."
+        "O pipeline opera em um fluxo híbrido adaptativo, projetado para processar tanto fotos 4K de bandejas quanto fotos de menor resolução ou "
+        "tiradas de perto, sem descartar frutos nas bordas (Figura 2)."
     )
 
-    add_fig("fig2_bandeja_deteccoes.png", "Figura 2. Inferência exaustiva de visão computacional com o modelo YOLOv8 sobre a bandeja de amostragem: detecção densa com caixas delimitadoras cobrindo 100% da área útil da esteira (4.214 frutos identificados).", width_in=2.5)
+    # FIGURA 2: BANDEJA COM DETECÇÕES
+    add_fig("fig2_bandeja_deteccoes.png", "Figura 2. Resultado da inferência sobre a bandeja de amostragem: 4.214 frutos detectados. Observam-se caixas residuais sobre as ripas de madeira da moldura (caixas laranja), isto é, falsos positivos remanescentes (Seção V-A).", width_in=2.5)
 
     add_p(
-        "O algoritmo processa a imagem em duas etapas consecutivas e complementares: "
-        "\n• Etapa 1 - Inferência Global de Escala: A imagem de entrada é submetida diretamente ao modelo YOLOv8 redimensionada para 640×640 pixels com "
-        "limiar de confiança moderado (conf >= 0,02). Essa etapa detecta frutos grandes, cachos em close-up e garante suporte a qualquer foto enviada por upload "
-        "com dimensões menores que 640 pixels; "
-        "\n• Etapa 2 - Fatiamento em Grade 1:1 de Resolução Nativa: Caso a largura e a altura da imagem sejam superiores a 640 pixels, o sistema ativa o fatiamento "
-        "em grade. As coordenadas das janelas são calculadas garantindo cobertura espacial de 100% até o último pixel perimétrico da imagem. O número de janelas "
-        "em cada eixo (X e Y) obedece à equação:"
+        "O algoritmo processa a imagem em duas etapas complementares:"
+        "\n• Etapa 1 - Inferência Global: a imagem é redimensionada para 640×640 pixels e submetida ao YOLOv8 com limiar de confiança baixo (conf ≥ 0,02). "
+        "Essa etapa detecta frutos grandes e cachos em close-up e dá suporte a fotos enviadas por upload com dimensões menores que 640 pixels;"
+        "\n• Etapa 2 - Fatiamento em Grade 1:1: se a largura e a altura da imagem forem maiores que 640 pixels, ativa-se o fatiamento em grade, com janelas "
+        "calculadas de modo a cobrir toda a imagem até a borda. O número de janelas em cada eixo (X e Y) é dado por:"
     )
 
+    # FÓRMULA 2: N_COORDS TILING (OMML NATIVO)
     add_math_equation(doc, """<math xmlns="http://www.w3.org/1998/Math/MathML">
       <mrow>
         <msub><mi>N</mi><mtext>coords</mtext></msub>
@@ -601,25 +591,25 @@ def build_paper():
     </math>""")
 
     add_p(
-        "onde S_tile = 640 pixels e S_stride = 360 pixels. A última janela de cada eixo é forçada exatamente na borda (V_max - S_tile). "
-        "Caso um recorte marginal possua dimensões inferiores a 640×640, aplica-se preenchimento reflexivo nas bordas através de cv2.copyMakeBorder com a flag "
-        "cv2.BORDER_REFLECT. Dessa forma, nenhum fruto nas bordas da bandeja é cortado."
+        "onde S_tile = 640 pixels e S_stride = 360 pixels (sobreposição de 43,75%). A última janela de cada eixo é posicionada exatamente na borda (V_max − S_tile). "
+        "Para uma imagem 3840×2160, isso resulta em algumas dezenas de janelas por imagem [informar o número real]. Se um recorte marginal tiver dimensões "
+        "menores que 640×640, aplica-se preenchimento reflexivo com cv2.copyMakeBorder (flag cv2.BORDER_REFLECT) [24], evitando descartar frutos nas bordas da bandeja."
     )
 
     add_p(
-        "Todas as caixas preditas nas janelas do Passo 1 e Passo 2 têm suas coordenadas transladadas para o sistema de coordenadas global da imagem original e são "
-        "submetidas à Supressão de Não-Máximos Global (cv2.dnn.NMSBoxes) com limiar IoU = 0,65, eliminando caixas redundantes geradas pela sobreposição de 43,75% "
-        "entre janelas adjacentes."
+        "As caixas preditas na Etapa 1 e na Etapa 2 são transladadas para o sistema de coordenadas da imagem original e submetidas ao NMS global "
+        "(cv2.dnn.NMSBoxes) com limiar de IoU = 0,65, para eliminar caixas redundantes geradas pela sobreposição entre janelas adjacentes. Como as caixas do "
+        "passe global e das janelas têm escalas diferentes, a fusão por IoU pode não eliminar todas as duplicidades [quantificar na ablação (Seção V)]."
     )
 
-    add_subsec_head("C. Discriminador Morfológico por Machine Learning (Grão vs. Madeira/Fundo)")
+    add_subsec_head("C. Filtro Fotométrico por Machine Learning (Grão vs. Madeira/Fundo)")
     add_p(
-        "Após o NMS Global, todas as caixas candidatas passam pelo discriminador GrainClassifier. Para cada caixa candidata, são computados 14 atributos "
-        "físico-geométricos e espectrais O(1) a partir de mapas pré-computados de escala de cinza, HSV e gradientes de Sobel (gx e gy). As formulações matemáticas "
-        "centrais do discriminador compreendem: "
-        "\n1. Contraste Centro-Borda (c2b): O núcleo central do fruto compreende a janela interior de 25% a 75% da altura e largura da caixa. O contraste é definido como:"
+        "Após o NMS global, cada caixa candidata passa pelo classificador ExtraTrees [22]. Para cada caixa, são calculados 14 atributos geométricos e "
+        "fotométricos a partir de mapas pré-computados de escala de cinza, HSV e gradientes de Sobel (gx e gy). As formulações principais são:"
+        "\n1. Contraste Centro-Borda (c2b): o núcleo central é a janela interior de 25% a 75% da altura e da largura da caixa, e o contraste é definido como:"
     )
 
+    # FÓRMULA 3: C2B (OMML NATIVO)
     add_math_equation(doc, """<math xmlns="http://www.w3.org/1998/Math/MathML">
       <mrow>
         <mi>c</mi><mn>2</mn><mi>b</mi><mo>=</mo>
@@ -630,9 +620,11 @@ def build_paper():
     </math>""")
 
     add_p(
-        "2. Gradiente Radial Convergente (rad): Mede a convergência esférica dos vetores de Sobel horizontais e verticais em direção ao centro da caixa delimitadora:"
+        "2. Gradiente Radial Convergente (rad): mede a convergência dos gradientes de Sobel horizontais e verticais em direção ao centro da caixa "
+        "(o sinal depende da convenção adotada para os eixos):"
     )
 
+    # FÓRMULA 4: RAD (OMML NATIVO)
     add_math_equation(doc, """<math xmlns="http://www.w3.org/1998/Math/MathML">
       <mrow>
         <mi>r</mi><mi>a</mi><mi>d</mi><mo>=</mo>
@@ -643,18 +635,22 @@ def build_paper():
     </math>""")
 
     add_p(
-        "Além de c2b e rad, são extraídos: contrastes extremos (min_d, max_d), mediana e desvio de saturação (s_med, s_std), mediana e desvio de brilho (v_med, v_std), "
-        "mediana de matiz (h_med), razão de aspecto (ar = cw/ch), área em pixels, dispersão de borda (border_std), variância Laplaciana (lap_v) e a confiança da rede (conf). "
-        "O classificador ExtraTrees avalia a probabilidade de a proposta corresponder a um fruto de café genuíno com limiar de 45%, descartando nós de madeira, ranhuras "
-        "e imperfeições do chão com precisão absoluta."
+        "Além de c2b e rad, são extraídos: contrastes extremos (min_d, max_d), mediana e desvio da saturação (s_med, s_std), mediana e desvio do brilho "
+        "(v_med, v_std), mediana do matiz (h_med), razão de aspecto (ar = cw/ch), área em pixels, dispersão de borda (border_std), variância Laplaciana "
+        "(lap_v) e a confiança da rede (conf). O ExtraTrees estima a probabilidade de a caixa corresponder a um fruto, com limiar de 45%, e descarta a "
+        "maior parte das detecções sobre nós de madeira, ranhuras e imperfeições do chão. [Descrever como as amostras de treino foram rotuladas "
+        "(grão / não grão); reportar a taxa de falsos positivos antes e depois do filtro e a importância dos atributos (a inclusão de conf e área acopla o filtro ao detector).]"
     )
 
-    add_subsec_head("D. Classificação em 5 Estágios Fenológicos e Diagnóstico Agronômico")
+    add_subsec_head("D. Classificação Colorimétrica em 5 Estágios e Diagnóstico")
     add_p(
-        "Os frutos aprovados pelo discriminador têm sua cor analisada no espaço HSV e são classificados nos cinco estágios fenológicos sistematizados na Tabela II."
+        "Os frutos aprovados pelo filtro têm sua cor analisada no espaço HSV (escala do OpenCV, com H de 0 a 179) e são classificados nos cinco estágios da "
+        "Tabela II. As faixas foram calibradas empiricamente [descrever o procedimento de calibração e a ordem de decisão quando as faixas se sobrepõem] "
+        "e [ainda não foram validadas contra a rotulagem de um especialista nem calibradas com referência de cor (ex.: cartão de cor/balanço de branco)]. "
+        "A estrela (★) indica os estágios que a hipótese de trabalho da Seção II-A associa ao ápice de qualidade."
     )
 
-    # TABELA II: ESTÁGIOS E CALIBRAÇÃO HSV
+    # TABELA II: ESTÁGIOS FENOLÓGICOS E FAIXAS HSV
     p_t2 = doc.add_paragraph()
     p_t2.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_t2.paragraph_format.space_before = Pt(6)
@@ -663,17 +659,17 @@ def build_paper():
     r_t2.font.bold = True
     r_t2.font.size = Pt(8.5)
 
-    tbl_m = doc.add_table(rows=6, cols=5)
+    tbl_m = doc.add_table(rows=6, cols=4)
     tbl_m.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_m.autofit = False
     set_table_borders(tbl_m)
 
-    w_m = [Inches(0.9), Inches(1.3), Inches(1.4), Inches(1.8), Inches(1.4)]
-    for idx, (h, w) in enumerate(zip(["Classe", "Estágio", "Faixa HSV Calibrada", "Significado Agronômico", "Relevância Sensorial"], w_m)):
+    w_m = [Inches(1.2), Inches(1.8), Inches(2.2), Inches(1.9)]
+    for idx, (h, w) in enumerate(zip(["Estágio", "Faixa HSV Calibrada", "Significado Agronômico", "Relevância Sensorial (hipótese)"], w_m)):
         cell = tbl_m.cell(0, idx)
         cell.width = w
         set_cell_background(cell, "F1F5F9")
-        set_cell_margins(cell, 90, 90, 90, 90)
+        set_cell_margins(cell, 80, 80, 90, 90)
         p = cell.paragraphs[0]
         p.alignment = WD_ALIGN_PARAGRAPH.LEFT
         r = p.add_run(h)
@@ -681,18 +677,18 @@ def build_paper():
         r.font.size = Pt(7.5)
 
     mat_rows = [
-        ("verde", "Verde", "H: 33-85\nS: 45-255\nV: 35-255", "Fruto imaturo em formação celular.", "Deprecia bebida (adstringência)."),
-        ("cereja_1", "Cereja I", "H: 21-34\nS: 70-255\nV: 65-255", "Início de maturação amarelada.", "Transição pré-pico."),
-        ("cereja_2", "Cereja II ★", "H: 14-22\nS: 80-255\nV: 60-255", "Maturação amarela plena.", "Ápice da Qualidade (Pico Brix)."),
-        ("passa", "Passa ★", "H: 6-15\nS: 75-255\nV: 30-220", "Início de murcha e dessecação.", "Ápice da Qualidade (Corpo e doçura)."),
-        ("seco", "Seco / Preto", "H: 0-180\nS: 0-70\nV: 0-70", "Fruto seco tardio ou deteriorado.", "Risco de defeitos de xícara.")
+        ("Verde", "H: 33-85\nS: 45-255\nV: 35-255", "Fruto imaturo em formação celular.", "Tende a prejudicar a bebida (adstringência)."),
+        ("Cereja I", "H: 21-34\nS: 70-255\nV: 65-255", "Início de maturação amarelada.", "Transição pré-pico."),
+        ("Cereja II ★", "H: 14-22\nS: 80-255\nV: 60-255", "Maturação amarela plena.", "Maturação plena (hipótese de ápice)."),
+        ("Passa ★", "H: 6-15\nS: 75-255\nV: 30-220", "Início de murcha e dessecação.", "Início de dessecação (hipótese de ápice)."),
+        ("Seco / Preto", "H: 0-179\nS: 0-70\nV: 0-70", "Fruto seco tardio ou deteriorado.", "Risco de defeitos de xícara.")
     ]
 
     for r_idx, row in enumerate(mat_rows, start=1):
         for c_idx, val in enumerate(row):
             cell = tbl_m.cell(r_idx, c_idx)
             cell.width = w_m[c_idx]
-            set_cell_margins(cell, 70, 70, 90, 90)
+            set_cell_margins(cell, 60, 60, 90, 90)
             p = cell.paragraphs[0]
             p.alignment = WD_ALIGN_PARAGRAPH.LEFT
             r = p.add_run(val)
@@ -701,9 +697,10 @@ def build_paper():
                 r.font.bold = True
 
     add_p(
-        "A tomada de decisão baseia-se no Índice do Ápice da Qualidade (I_ápice):"
+        "O diagnóstico baseia-se no Índice do Ápice da Qualidade (I_ápice):"
     )
 
+    # FÓRMULA 5: I_ÁPICE (OMML NATIVO)
     add_math_equation(doc, """<math xmlns="http://www.w3.org/1998/Math/MathML">
       <mrow>
         <msub><mi>I</mi><mtext>ápice</mtext></msub>
@@ -717,83 +714,90 @@ def build_paper():
     </math>""")
 
     add_p(
-        "Quando I_ápice ≥ 50%, o lote é diagnosticado no Ponto Ótimo de Colheita (Ápice da Qualidade), assegurando notas SCA máximas na xícara. "
-        "Se o somatório com Cereja I atingir 60%, a recomendação é de colheita imediata favorável; acima de 35% de verdes, a recomendação alerta para aguardar maturação."
+        "Adotam-se, como regra heurística de trabalho: se I_ápice ≥ 50%, o lote é diagnosticado como “ponto ótimo de colheita”; "
+        "se I_ápice < 50%, mas a soma de Cereja I, Cereja II e Passa for ≥ 60%, o lote é considerado em “maturação favorável”; "
+        "e, com mais de 35% de frutos verdes, a recomendação é aguardar a maturação. [Esses limiares não foram validados com dados "
+        "agronômicos ou sensoriais: justificar com literatura ou validar.]"
     )
 
     add_subsec_head("E. Estação de Aprendizado Contínuo e Dashboard Web")
     add_p(
-        "Para contornar o problema de travamento síncrono durante requisições de análise, o servidor Starlette dispara a rotina de ajuste fino da rede "
-        "(execute_continuous_fine_tuning) através de uma BackgroundTask assíncrona. A resposta JSON contendo as contagens e a imagem anotada em Base64 "
-        "é devolvida instantaneamente ao navegador em ~1 segundo, enquanto a rede executa 2 a 3 épocas de auto-refinamento em segundo plano sem perda de conhecimento "
-        "prévio (freeze=10)."
+        "Para evitar o travamento durante as requisições de análise, o servidor Starlette dispara a rotina de ajuste fino da rede "
+        "(execute_continuous_fine_tuning) por meio de uma BackgroundTask assíncrona. A resposta JSON, com as contagens e a imagem anotada "
+        "em Base64, é devolvida ao navegador em cerca de 1 s, enquanto a rede executa 2 a 3 épocas de ajuste fino em segundo plano, com as "
+        "10 primeiras camadas congeladas (freeze = 10), o que visa preservar o conhecimento prévio sem garantir que não haja degradação [avaliar em conjunto de teste fixo]."
     )
 
     add_p(
-        "A interface web desenvolvida apresenta um leiaute profissional e reativo estruturado para facilidade de leitura e operação em campo. "
-        "O operador conta com pré-visualização instantânea da foto selecionada ou enviada por upload, cronômetro de inferência com discriminação de etapas, "
-        "painel de cartões KPI informando as contagens e proporções exatas (Figura 3), gráfico vetorial Donut com distribuição cromática percentual e diagnóstico "
-        "agronômico fundamentado no Ápice da Qualidade (Figura 4)."
+        "A interface web apresenta pré-visualização da foto selecionada ou enviada por upload, cronômetro de inferência com discriminação das etapas, "
+        "cartões de indicadores com as contagens e proporções (Figura 3), gráfico de rosca com a distribuição por estágio e o diagnóstico agronômico "
+        "baseado no Índice do Ápice (Figura 4)."
     )
 
     # FIGURA 3: CARTÕES KPI
-    add_fig("fig3_kpi_cartoes.png", "Figura 3. Painel de cartões KPI gerados pelo sistema: contagem total de 4.214 frutos e segregação percentual por classe fenológica (2,8% Verdes, 70,9% Cereja I, 6,1% Cereja II, 19,9% Passa e 0,4% Secos).", width_in=3.3)
+    add_fig("fig3_kpi_cartoes.png", "Figura 3. Painel de cartões de indicadores: contagem total de 4.214 frutos e distribuição por estágio (2,8% Verde, 70,9% Cereja I, 6,1% Cereja II, 19,9% Passa e 0,4% Seco).", width_in=3.3)
 
-    # FIGURA 4: DIAGNÓSTICO DE MATURAÇÃO
-    add_fig("fig4_diagnostico_maturacao.png", "Figura 4. Painel de diagnóstico da maturação: gráfico Donut de distribuição dos 4.214 frutos e laudo agronômico automatizado recomendando 'Excelente Ponto de Colheita'.", width_in=2.8)
+    # FIGURA 4: DIAGNÓSTICO MATURAÇÃO
+    add_fig("fig4_diagnostico_maturacao.png", "Figura 4. Painel de diagnóstico: gráfico de rosca da distribuição dos 4.214 frutos e laudo automatizado “Excelente Ponto de Colheita”. [O laudo foi gerado por uma regra de agregação diferente da descrita na Seção IV-D; corrigir a regra e o rótulo no software e regerar a figura.]", width_in=2.8)
 
     add_p(
-        "Para garantir a evolução autônoma do modelo conforme novas amostras e condições de iluminação são incorporadas, o sistema integra a "
-        "Estação de Aprendizado Contínuo (Figura 5). O módulo permite disparar ciclos de aperfeiçoamento incremental (fine-tuning) em segundo plano, "
-        "congelando as primeiras 10 camadas convolucionais (freeze=10) da arquitetura YOLOv8 para preservar o aprendizado de bordas e texturas fundamentais."
+        "Para permitir a evolução do modelo com novas amostras e condições de iluminação, o sistema integra a Estação de Aprendizado Contínuo (Figura 5), "
+        "que dispara ciclos de ajuste fino incremental em segundo plano, congelando as 10 primeiras camadas convolucionais do YOLOv8 (freeze = 10). "
+        "[Informar a origem dos rótulos usados em cada ciclo: anotação manual, correção do usuário ou pseudo-rótulos do próprio modelo.]"
     )
 
     # FIGURA 5: APRENDIZADO CONTÍNUO
-    add_fig("fig5_aprendizado_continuo.png", "Figura 5. Estação de Aprendizado Contínuo (Machine Learning): histórico de ciclos de fine-tuning incremental do modelo YOLOv8 em CPU com congelamento das primeiras 10 camadas convolucionais (freeze=10).", width_in=3.3)
+    add_fig("fig5_aprendizado_continuo.png", "Figura 5. Estação de Aprendizado Contínuo: histórico de ciclos de ajuste fino do YOLOv8 em CPU, com congelamento das 10 primeiras camadas. O status “sucesso” indica execução sem erro, não ganho de desempenho.", width_in=3.3)
 
     # ══════════════════════════════════════════════════════════════════════════
     # V. RESULTADOS E DISCUSSÃO
     # ══════════════════════════════════════════════════════════════════════════
     add_sec_head("V. RESULTADOS E DISCUSSÃO")
 
-    add_subsec_head("A. Detecção Global e Classificação Morfológica na Bandeja")
+    add_subsec_head("A. Estudo de Caso: Detecção e Classificação na Bandeja")
     add_p(
-        "A avaliação experimental foi realizada submetendo a imagem fotográfica de alta resolução da bandeja de amostragem (Figura 1) ao pipeline de visão computacional. "
-        "Conforme ilustrado na Figura 2, o sistema efetuou a detecção densa com cobertura de 100% da área útil da esteira, identificando um universo amostral "
-        "de 4.214 frutos de Café Arara com caixas delimitadoras precisas sobre cada grão."
+        "A fotografia da bandeja (Figura 1) foi submetida ao pipeline. Como mostra a Figura 2, o sistema detectou 4.214 frutos, com caixas distribuídas "
+        "por toda a área útil da esteira. Observam-se também caixas residuais sobre as ripas da moldura (Figura 2, caixas laranja): o filtro reduziu, "
+        "mas não eliminou, os falsos positivos de madeira. [Inserir tabela com: contagem manual de referência em N bandejas, contagem automática, erro "
+        "absoluto e percentual (MAE/MAPE), R² e gráfico de Bland–Altman; e precisão, recall e F1 da detecção, com e sem o filtro ExtraTrees (ablação: "
+        "só passe global, só tiling, híbrido).]"
     )
 
     add_p(
-        "A classificação espectral e morfológica dos frutos detectados (Figura 3 e Figura 4) revelou a seguinte distribuição fenológica no lote avaliado: "
-        "\n• Verde (Imaturo): 119 frutos (2,8%), indicando índice residual mínimo de frutos verdes e ausência de perdas por adstringência ácida; "
-        "\n• Cereja I (Início de Maturação): 2.986 frutos (70,9%), correspondendo à predominância da transição amarelada rica em compostos aromáticos; "
-        "\n• Cereja II (Ápice da Maturação): 256 frutos (6,1%), evidenciando maturação amarela plena e intumescimento celular máximo; "
-        "\n• Passa (Ápice Concentrado): 837 frutos (19,9%), apresentando desidratação osmótica inicial e teor de açúcares no limite superior; e "
-        "\n• Seco: 16 frutos (0,4%), confirmando que o lote foi colhido antes da ocorrência de dessecação excessiva ou fermentações indesejáveis."
+        "A classificação colorimétrica dos frutos detectados (Figuras 3 e 4) resultou na seguinte distribuição:"
+        "\n• Verde: 119 frutos (2,8%);"
+        "\n• Cereja I: 2.986 frutos (70,9%), classe predominante e, segundo a Tabela II, em estágio pré-pico;"
+        "\n• Cereja II: 256 frutos (6,1%);"
+        "\n• Passa: 837 frutos (19,9%); e"
+        "\n• Seco: 16 frutos (0,4%)."
+        "\n[Inserir a matriz de confusão dos cinco estágios contra a rotulagem de um especialista em uma amostra de frutos.]"
     )
 
     add_p(
-        "O Índice do Ápice da Qualidade somado à faixa de transição favorável (Cereja I + Cereja II + Passa) totalizou 4.079 frutos, representando 96,8% da bandeja. "
-        "Essa concentração determinou a emissão automatizada do diagnóstico de 'Excelente Ponto de Colheita' (Figura 4), validando a premissa de que a visão "
-        "computacional fornece subsídio técnico objetivo e reprodutível para a tomada de decisão no agronegócio do café especial."
+        "O Índice do Ápice da Qualidade foi I_ápice = (256 + 837) / 4.214 = 25,9%, abaixo do limiar de 50%; portanto, pela regra da Seção IV-D, "
+        "o lote não atinge o “ponto ótimo”. A soma de Cereja I, Cereja II e Passa foi de 4.079 frutos (96,8%), o que satisfaz o critério de “maturação "
+        "favorável” (≥ 60%), com 2,8% de frutos verdes (< 35%). O laudo da Figura 4 (“Excelente Ponto de Colheita”) usa uma regra de agregação distinta "
+        "da descrita e atribui esse rótulo ao segundo critério [corrigir no software e regerar a Figura 4]. Este resultado ilustra o funcionamento do painel "
+        "em uma bandeja; ele não valida, por si só, a precisão do diagnóstico, pois a relação entre as classes e a qualidade sensorial não foi avaliada."
     )
 
-    add_subsec_head("B. Desempenho dos Ciclos de Aprendizado Contínuo")
+    add_subsec_head("B. Ciclos de Ajuste Fino Incremental")
     add_p(
-        "A avaliação da Estação de Aprendizado Contínuo (Figura 5) demonstrou a viabilidade operacional do aperfeiçoamento contínuo em ambiente de produção agrícola. "
-        "Foram registrados 10 ciclos sucessivos de retreinamento supervisionado (versões v1.14 a v1.23), cada qual executando 2 épocas de ajuste fino com congelamento "
-        "de camadas (freeze=10) utilizando exclusivamente processamento em CPU convencional. "
-        "Os tempos de execução oscilaram de 95,4 segundos a 161,5 segundos por ciclo, demonstrando que o fine-tuning incremental pode ser executado em segundo plano "
-        "sem demandar servidores dedicados com GPU de alto custo."
+        "Foram registrados 10 ciclos sucessivos de ajuste fino (versões v1.14 a v1.23, entre 20 e 22/11/2026), cada um com 2 épocas e congelamento de "
+        "camadas (freeze = 10), executados em CPU, com tempos de 95,4 s a 161,5 s por ciclo (Figura 5). Isso mostra que o ajuste fino pode ser executado "
+        "em segundo plano sem GPU. A Figura 5, porém, registra apenas execução e tempo. [Reportar mAP/precisão/recall antes e depois dos ciclos, em um "
+        "conjunto de teste fixo e não usado no ajuste, e a origem dos rótulos. Verificar também as versões v1.22 e v1.23, iniciadas com 12 s de diferença "
+        "apesar de durarem cerca de 140 s cada, o que indica execuções sobrepostas.]"
     )
 
-    add_subsec_head("C. Desempenho e Medição de Latência Computacional")
+    add_subsec_head("C. Desempenho Computacional")
     add_p(
-        "A Tabela III apresenta a decomposição temporal de cada fase do pipeline em 10 execuções consecutivas para imagens de alta resolução (4K) e fotografias "
-        "reduzidas enviadas por upload no computador de teste."
+        "O tempo mediano de processamento foi de 1,21 s por imagem em CPU. [Descrever o protocolo: variante do YOLOv8, runtime (PyTorch/ONNX/OpenVINO), "
+        "número de execuções, imagem(ns) usada(s), se o tempo inclui decodificação, NMS e ExtraTrees, e a dispersão (ex.: P95). O valor parece baixo "
+        "para dezenas de janelas por imagem em CPU e precisa ser documentado.]"
     )
 
-    # TABELA III: LATÊNCIA
+    # TABELA III: LATÊNCIA DETALHADA
     p_t3 = doc.add_paragraph()
     p_t3.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_t3.paragraph_format.space_before = Pt(6)
@@ -812,61 +816,6 @@ def build_paper():
         cell = tbl_lat.cell(0, idx)
         cell.width = w
         set_cell_background(cell, "F1F5F9")
-        set_cell_margins(cell, 80, 80, 100, 100)
-        p = cell.paragraphs[0]
-        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        r = p.add_run(h)
-        r.font.bold = True
-        r.font.size = Pt(7.5)
-
-    lat_rows = [
-        ("Decodificação de Imagem (OpenCV / Pillow)", "142 ms", "26 ms"),
-        ("Inferência Neural YOLOv8 (Passe Global + Tiling)", "825 ms", "185 ms"),
-        ("Supressão de Não-Máximos (NMS Global)", "36 ms", "5 ms"),
-        ("Filtro ExtraTrees ML e Espectrometria HSV", "110 ms", "16 ms"),
-        ("Geração Base64 JPEG e JSON de Diagnóstico", "97 ms", "30 ms")
-    ]
-
-    for r_idx, row in enumerate(lat_rows, start=1):
-        for c_idx, val in enumerate(row):
-            cell = tbl_lat.cell(r_idx, c_idx)
-            cell.width = w_l[c_idx]
-            set_cell_margins(cell, 70, 70, 100, 100)
-            p = cell.paragraphs[0]
-            p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-            r = p.add_run(val)
-            r.font.size = Pt(7.5)
-
-    add_p(
-        "A latência total consolidada para processar uma fotografia 4K contendo milhares de grãos (como a amostragem de 4.214 frutos avaliada) foi de 1.210 ms (1,21 s), o que cumpre rigorosamente os "
-        "critérios de resposta de Nielsen [19] para interfaces interativas sem que haja sensação de travamento pelo operador."
-    )
-
-    add_subsec_head("D. Avaliação de Usabilidade e Aceitação Operacional")
-    add_p(
-        "A usabilidade do artefato foi avaliada com a participação de cafeicultores, agrônomos e pesquisadores utilizando o questionário System Usability Scale (SUS) "
-        "em sua versão validada para o português brasileiro [16]. A Tabela IV detalha as 10 afirmativas do questionário SUS, a média obtida em cada item e o escore global."
-    )
-
-    # TABELA IV: QUESTIONÁRIO SUS
-    p_t4 = doc.add_paragraph()
-    p_t4.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_t4.paragraph_format.space_before = Pt(6)
-    p_t4.paragraph_format.space_after = Pt(2)
-    r_t4 = p_t4.add_run("Tabela IV\nAVALIAÇÃO DE USABILIDADE DO PAINEL PELO SYSTEM USABILITY SCALE (SUS)")
-    r_t4.font.bold = True
-    r_t4.font.size = Pt(8.5)
-
-    tbl_sus = doc.add_table(rows=12, cols=3)
-    tbl_sus.alignment = WD_TABLE_ALIGNMENT.CENTER
-    tbl_sus.autofit = False
-    set_table_borders(tbl_sus)
-
-    w_s = [Inches(0.6), Inches(5.1), Inches(1.4)]
-    for idx, (h, w) in enumerate(zip(["Item", "Afirmativa Avaliada (Escala Likert de 1 a 5)", "Média Amostral"], w_s)):
-        cell = tbl_sus.cell(0, idx)
-        cell.width = w
-        set_cell_background(cell, "F1F5F9")
         set_cell_margins(cell, 80, 80, 90, 90)
         p = cell.paragraphs[0]
         p.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -874,47 +823,34 @@ def build_paper():
         r.font.bold = True
         r.font.size = Pt(7.5)
 
-    sus_items = [
-        ("1", "Eu acho que gostaria de usar este sistema com frequência para monitorar a colheita.", "4.8 / 5.0"),
-        ("2", "Eu achei o sistema desnecessariamente complexo.", "1.2 / 5.0"),
-        ("3", "Eu achei o sistema fácil de usar e intuitivo.", "4.7 / 5.0"),
-        ("4", "Eu acho que precisaria do auxílio de uma pessoa técnica para usar este sistema.", "1.3 / 5.0"),
-        ("5", "Eu achei que as várias funções do sistema estão muito bem integradas.", "4.6 / 5.0"),
-        ("6", "Eu achei que havia muita inconsistência neste sistema.", "1.1 / 5.0"),
-        ("7", "Eu imagino que a maioria das pessoas aprenderia a usar este sistema rapidamente.", "4.8 / 5.0"),
-        ("8", "Eu achei o sistema muito incômodo de usar.", "1.2 / 5.0"),
-        ("9", "Eu me senti muito confiante ao usar o sistema.", "4.7 / 5.0"),
-        ("10", "Eu precisei aprender muitas coisas novas antes de conseguir usar o sistema.", "1.4 / 5.0"),
-        ("Total", "Pontuação SUS Calculada (Escala de 0 a 100 pontos):", "87.5 pontos")
+    lat_rows = [
+        ("Decodificação de Imagem (Pillow / OpenCV)", "142 ms", "26 ms"),
+        ("Inferência Neural YOLOv8 (Passe Global + Tiling)", "825 ms", "185 ms"),
+        ("Supressão de Não-Máximos (NMS Global IoU=0,65)", "36 ms", "5 ms"),
+        ("Filtro ExtraTrees ML (14 atributos) e Espaço HSV", "110 ms", "16 ms"),
+        ("Geração Base64 JPEG e Estruturação JSON", "97 ms", "30 ms")
     ]
 
-    for r_idx, row in enumerate(sus_items, start=1):
+    for r_idx, row in enumerate(lat_rows, start=1):
         for c_idx, val in enumerate(row):
-            cell = tbl_sus.cell(r_idx, c_idx)
-            cell.width = w_s[c_idx]
+            cell = tbl_lat.cell(r_idx, c_idx)
+            cell.width = w_l[c_idx]
             set_cell_margins(cell, 60, 60, 90, 90)
             p = cell.paragraphs[0]
             p.alignment = WD_ALIGN_PARAGRAPH.LEFT
             r = p.add_run(val)
             r.font.size = Pt(7.2)
-            if r_idx == 11:
-                r.font.bold = True
-                set_cell_background(cell, "FEF3C7")
 
+    add_subsec_head("D. Limitações Identificadas")
     add_p(
-        "A pontuação consolidada de 87,5 pontos situa o artefato no percentil de aceitabilidade excelente ('Best Imaginable' segundo Bangor et al. [20]), "
-        "comprovando que a substituição de números crus por recomendações agronômicas orientadas ao Ápice da Qualidade confere valor prático imediato ao produtor."
-    )
-
-    add_subsec_head("E. Limitações Identificadas")
-    add_p(
-        "Dentre as limitações observadas durante os testes, destacam-se: "
-        "(1) Disposição dos frutos em monocamada: o sistema baseia-se em visão óptica bidimensional, exigindo que os frutos na bandeja amostral estejam "
-        "espalhados sem empilhamento denso; frutos completamente cobertos por outros grãos sofrem oclusão total e não podem ser detectados; "
-        "(2) Efeitos de iluminação extrema: a exposição direta a sol a pino sem difusor pode causar reflexos brancos especulares intensos sobre a casca cerosa, "
-        "sendo recomendada a amostragem em bancadas cobertas ou com difusor de luz natural; e "
-        "(3) Especificidade cromática da cultivar: os parâmetros espectrais HSV foram estritamente calibrados para a variedade Arara, demandando "
-        "reparametrização caso o sistema seja aplicado a cultivares vermelhas como Catuaí Vermelho ou Bourbon."
+        "Dentre as limitações, destacam-se: "
+        "(1) disposição dos frutos em monocamada: o sistema baseia-se em imagem 2D, e frutos cobertos por outros sofrem oclusão e não podem ser detectados; "
+        "(2) iluminação extrema: sol a pino sem difusor pode causar reflexos especulares intensos sobre a casca, sendo recomendada a amostragem em bancadas cobertas ou com difusor; "
+        "(3) especificidade da cultivar: os parâmetros HSV foram calibrados para o Arara e exigem reparametrização para cultivares vermelhas, como Catuaí Vermelho ou Bourbon; "
+        "(4) validação limitada: o estudo de caso detalhado usa uma única bandeja [e não possui contagem manual de referência, se esta não for incluída]; "
+        "(5) falsos positivos remanescentes sobre a madeira (Figura 2); "
+        "(6) os limiares HSV e as regras do diagnóstico não foram validados com especialista nem com análise sensorial; e "
+        "(7) a usabilidade não foi avaliada [ajustar se o SUS for aplicado]."
     )
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -923,42 +859,41 @@ def build_paper():
     add_sec_head("VI. CONCLUSÃO")
 
     add_p(
-        "Este trabalho respondeu afirmativamente à questão de pesquisa ao demonstrar e comprovar a viabilidade técnica, algorítmica e operacional da visão "
-        "computacional na classificação morfológica e contagem do nível de maturação do Café Arara. A conjugação entre o modelo neural YOLOv8 e o "
-        "discriminador morfológico 3D baseado em Machine Learning (ExtraTrees) solucionou com êxito os desafios de alta densidade em imagens 4K e a "
-        "contaminação por ruídos de madeira e chão."
+        "Este trabalho apresentou e avaliou, como prova de conceito, um pipeline de visão computacional para contagem e classificação colorimétrica "
+        "do estágio de maturação do Café Arara. No estudo de caso, a combinação de YOLOv8 com fatiamento em grade, NMS global e filtro ExtraTrees permitiu "
+        "processar uma imagem de bandeja com 4.214 frutos em cerca de 1,2 s em CPU, e o painel apresentou a distribuição por estágio. Os resultados "
+        "indicam a viabilidade técnica da abordagem, mas ainda não estabelecem sua acurácia [completar com as métricas da Seção V]."
     )
 
     add_p(
-        "A formalização dos cinco estágios fenológicos e a definição matemática do Ápice da Qualidade (somatório de Cereja II e Passa) constituem uma "
-        "contribuição agronômica substancial para a Cafeicultura 4.0, conferindo objetividade científica à determinação do momento ótimo de colheita para cafés especiais. "
-        "O sistema transcende a simples contagem estatística ao integrar um painel web intuitivo, com resposta ágil em ~1,2 segundos e aprendizado contínuo assíncrono."
+        "A definição dos cinco estágios e do Índice do Ápice organiza a informação para a decisão de colheita. A hipótese de que Cereja II e Passa "
+        "concentram o ápice de qualidade, porém, depende de validação sensorial, e as regras do diagnóstico são heurísticas. O sistema vai além da contagem "
+        "ao integrar um painel web com resposta em cerca de 1,2 s e ajuste fino assíncrono."
     )
 
     add_p(
-        "Como trabalhos futuros, propõe-se: "
-        "(1) O embarque do pipeline em dispositivos de computação de borda (ex: NVIDIA Jetson Orin Nano) acoplados diretamente ao chassi de colhedoras mecânicas "
-        "automotrizes, gerando mapas georreferenciados de maturação por talhão em tempo real durante a derriça; "
-        "(2) A validação analítica correlacionando as leituras de maturação do sistema com análises laboratoriais de cromatografia de açúcares (HPLC) e provas de "
-        "xícara conduzidas por Q-Graders certificados; e "
-        "(3) A integração com sensores de umidade de grãos e previsões agroclimáticas para predição da taxa diária de desidratação dos frutos em terreiro."
+        "Como trabalhos futuros, propõem-se: "
+        "(i) validação com contagem manual de referência em várias bandejas, safras e condições de iluminação; "
+        "(ii) rotulagem dos estágios por especialista e calibração de cor; "
+        "(iii) análise sensorial (prova de xícara) para validar a faixa de ápice; "
+        "(iv) avaliação de usabilidade com o SUS; e "
+        "(v) o embarque do pipeline em dispositivos de borda (ex.: NVIDIA Jetson Orin Nano) acoplados a colhedoras, para gerar mapas georreferenciados "
+        "de maturação por talhão."
     )
 
     # ══════════════════════════════════════════════════════════════════════════
-    # AGRADECIMENTOS & USO DE INTELIGÊNCIA ARTIFICIAL
+    # AGRADECIMENTOS & DECLARAÇÃO DE USO DE IA
     # ══════════════════════════════════════════════════════════════════════════
     add_sec_head("AGRADECIMENTOS")
     add_p(
-        "O autor manifesta sincero agradecimento a [PREENCHER: Nome do orientador, co-orientadores e departamento acadêmico], cuja orientação e rigor técnico "
-        "foram indispensáveis para o sucesso deste trabalho. Agradecimentos especiais aos produtores de café e cooperativas agrícolas da região por cederem as "
-        "amostras de frutos da cultivar Arara e permitirem a realização dos testes de campo. [PREENCHER: Agências de fomento, bolsas e auxílios de pesquisa se aplicável]."
+        "O autor agradece ao professor Alysson Steve Lacerda pela orientação e aos produtores de café e às cooperativas da região que cederam as "
+        "amostras de frutos da cultivar Arara e permitiram a realização do experimento."
     )
 
     add_p(
-        "Declaração de Uso de Inteligência Artificial: Em observância aos padrões de integridade acadêmica, registra-se que assistentes computacionais de "
-        "inteligência artificial generativa foram empregados exclusivamente como ferramentas auxiliares para verificação de sintaxe de código, estruturação "
-        "de rotinas de estilização e organização documental. Todas as formulações conceituais, hipóteses agronômicas, modelos treinados, testes experimentais "
-        "e conclusões analíticas são de autoria e responsabilidade integral dos autores."
+        "Declaração de Uso de Inteligência Artificial: [descrever com exatidão o uso de ferramentas de IA generativa (ex.: apoio à escrita, revisão "
+        "de texto, depuração de código, sugestão de referências) e confirmar que todas as referências foram conferidas nas fontes originais]. "
+        "O autor é responsável pelo conteúdo, pelos resultados e pelas conclusões deste trabalho."
     )
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -967,34 +902,31 @@ def build_paper():
     add_sec_head("REFERÊNCIAS")
 
     referencias = [
-        "[1] Specialty Coffee Association (SCA), \"Protocols for Cupping Specialty Coffee: Physical and Sensory Assessment,\" SCA Standards and Guidelines, Santa Ana, CA, USA, 2021.",
-        "[2] A. W. R. Matiello, S. R. Almeida, and C. H. S. Carvalho, \"Cultivar de Café Arara: Características Agronômicas, Produtividade e Resistência à Ferrugem,\" Fundação Procafé, Boletim Técnico de Cafeicultura, Varginha, MG, 2022.",
-        "[3] F. M. Borém, P. C. T. Isquierdo, E. P. Oliveira, and D. E. Ribeiro, \"Biochemical and physical changes during coffee fruit development and maturation: Impacts on beverage quality,\" Journal of Agricultural and Food Chemistry, vol. 62, no. 31, pp. 7892–7901, 2014.",
-        "[4] S. M. Chalfoun, V. M. Silva, and E. M. Castro, \"Efeito do Estádio de Maturação dos Frutos na Qualidade da Bebida do Café Arábica,\" Coffee Science, Lavras, vol. 8, no. 2, pp. 210–218, 2013.",
-        "[5] J. C. Rena and M. R. Maestri, Fisiologia do Cafeeiro. Campinas: Instituto Agronômico de Campinas, 2000.",
-        "[6] A. S. Silva, P. C. Corrêa, and G. H. H. Oliveira, \"Quality evaluation of coffee beans dried on raised beds using colorimetric spectrometry,\" Biosystems Engineering, vol. 182, pp. 85–94, 2019.",
-        "[7] G. Jocher, A. Chaurasia, and J. Qiu, \"Ultralytics YOLOv8 Architecture and Detection Framework,\" Zenodo, doi: 10.5281/zenodo.7398436, 2023.",
-        "[8] P. J. Ramos, F. A. Prieto, and E. C. Montoya, \"Automatic coffee fruit counting and ripeness estimation using machine vision,\" Computers and Electronics in Agriculture, vol. 137, pp. 110–119, 2017.",
-        "[9] F. C. Akyon, S. O. Altinuc, and A. Temizel, \"Slicing Aided Hyper Inference and Fine-Tuning for Small Object Detection,\" IEEE International Conference on Image Processing (ICIP), pp. 966–970, 2022.",
-        "[10] D. C. Rose et al., \"Decision support tools for agriculture: towards effective design and delivery,\" Agricultural Systems, vol. 149, pp. 165–174, 2016.",
+        "[1] Specialty Coffee Association (SCA), \"Protocols for Cupping Specialty Coffee: Physical and Sensory Assessment,\" SCA Standards and Guidelines, Santa Ana, CA, USA, 2021. [confirmar versão e ano vigentes]",
+        "[2] C. H. S. de Carvalho et al., Catálogo de Cultivares de Café Arábica. Brasília, DF: Embrapa Café, 2022, 115 p.",
+        "[3] R. D. De Castro and P. Marraccini, \"Cytology, biochemistry and molecular changes during coffee fruit development,\" Brazilian Journal of Plant Physiology, vol. 18, no. 1, pp. 175–199, 2006.",
+        "[4] J. L. C. Baptistella, G. Assoni, M. S. da Silva, and P. Mazzafera, \"Variation in soluble sugars in Arabica coffee cherry fruits,\" 2024. [completar periódico, volume e DOI (PMC11243843)]",
+        "[5] P. D. Graciano et al., \"Estádios de maturação de cultivares de Coffea arabica L. em Monte Carmelo-MG e suas características sensoriais,\" Ciência Agrícola, 2019. [completar volume e páginas]",
+        "[6] A. D. Durante et al., \"Qualidade do café colhido em diferentes estádios de maturação,\" 2011. [completar veículo de publicação]",
+        "[7] G. Jocher, A. Chaurasia, and J. Qiu, \"Ultralytics YOLOv8,\" software, version 8.0.0, 2023. [Online]. Available: https://github.com/ultralytics/ultralytics",
+        "[8] Z. Zheng, P. Wang, W. Liu, J. Li, R. Ye, and D. Ren, \"Distance-IoU loss: Faster and better learning for bounding box regression,\" in Proc. AAAI Conf. Artificial Intelligence, vol. 34, no. 7, pp. 12993–13000, 2020.",
+        "[9] X. Li et al., \"Generalized focal loss: Learning qualified and distributed bounding boxes for dense object detection,\" in Advances in Neural Information Processing Systems (NeurIPS), vol. 33, 2020.",
+        "[10] F. C. Akyon, S. O. Altinuc, and A. Temizel, \"Slicing Aided Hyper Inference and Fine-Tuning for Small Object Detection,\" IEEE International Conference on Image Processing (ICIP), pp. 966–970, 2022.",
         "[11] R. C. Gonzalez and R. E. Woods, Digital Image Processing, 4th ed. New York: Pearson, 2018.",
         "[12] Z. Zhai, J. F. Martínez, V. Beltran, and N. L. Martínez, \"Decision support systems for agriculture 4.0: survey and challenges,\" Computers and Electronics in Agriculture, vol. 170, p. 105256, 2020.",
-        "[13] A. Sarikaya, M. Correll, L. Bartram, M. Tory, and D. Fisher, \"What do we talk about when we talk about dashboards?\" IEEE Transactions on Visualization and Computer Graphics, vol. 25, no. 1, pp. 682–692, 2019.",
-        "[14] International Organization for Standardization, \"ISO 9241-11:2018 - Ergonomics of human-system interaction - Part 11: Usability: Definitions and concepts,\" ISO Geneva, 2018.",
-        "[15] J. Brooke, \"SUS: a 'quick and dirty' usability scale,\" in Usability Evaluation in Industry, P. W. Jordan et al., Eds. London: Taylor & Francis, pp. 189–194, 1996.",
-        "[16] D. F. Lourenço, E. V. Carmona, and M. H. B. M. Lopes, \"Tradução e adaptação transcultural da System Usability Scale para o português do Brasil,\" Aquichan, vol. 22, no. 2, p. e2228, 2022.",
-        "[17] A. R. Hevner, S. T. March, J. Park, and S. Ram, \"Design science in information systems research,\" MIS Quarterly, vol. 28, no. 1, pp. 75–105, 2004.",
-        "[18] K. Peffers, T. Tuunanen, M. A. Rothenberger, and S. Chatterjee, \"A design science research methodology for information systems research,\" Journal of Management Information Systems, vol. 24, no. 3, pp. 45–77, 2007.",
-        "[19] J. Nielsen, Usability Engineering. Boston: Academic Press, 1993.",
-        "[20] A. Bangor, P. T. Kortum, and J. T. Miller, \"An empirical evaluation of the System Usability Scale,\" International Journal of Human-Computer Interaction, vol. 24, no. 6, pp. 574–594, 2008.",
-        "[21] D. L. Parnas, \"On the criteria to be used in decomposing systems into modules,\" Communications of the ACM, vol. 15, no. 12, pp. 1053–1058, 1972.",
-        "[22] J. Sauro, A Practical Guide to the System Usability Scale: Background, Benchmarks & Best Practices. Denver: Measuring Usability LLC, 2011.",
-        "[23] D. C. Montgomery and G. C. Runger, Estatística aplicada e probabilidade para engenheiros, 7th ed. Rio de Janeiro: LTC, 2021.",
-        "[24] OpenAPI Initiative, \"OpenAPI Specification v3.1.0,\" https://spec.openapis.org/oas/v3.1.0.html, 2021.",
-        "[25] J. Deng et al., \"ImageNet: A Large-Scale Hierarchical Image Database,\" in IEEE CVPR, pp. 248–255, 2009.",
-        "[26] T. Lin et al., \"Microsoft COCO: Common Objects in Context,\" in European Conference on Computer Vision (ECCV), pp. 740–755, 2014.",
-        "[27] P. Geurts, D. Ernst, and L. Wehenkel, \"Extremely randomized trees,\" Machine Learning, vol. 63, no. 1, pp. 3–42, 2006.",
-        "[28] F. Pedregosa et al., \"Scikit-learn: Machine Learning in Python,\" Journal of Machine Learning Research, vol. 12, pp. 2825–2830, 2011."
+        "[13] D. C. Rose et al., \"Decision support tools for agriculture: towards effective design and delivery,\" Agricultural Systems, vol. 149, pp. 165–174, 2016.",
+        "[14] A. Sarikaya, M. Correll, L. Bartram, M. Tory, and D. Fisher, \"What do we talk about when we talk about dashboards?\" IEEE Transactions on Visualization and Computer Graphics, vol. 25, no. 1, pp. 682–692, 2019.",
+        "[15] International Organization for Standardization, \"ISO 9241-11:2018 - Ergonomics of human-system interaction - Part 11: Usability: Definitions and concepts,\" ISO Geneva, 2018.",
+        "[16] J. Brooke, \"SUS: a 'quick and dirty' usability scale,\" in Usability Evaluation in Industry, P. W. Jordan et al., Eds. London: Taylor & Francis, pp. 189–194, 1996.",
+        "[17] D. F. Lourenço, E. V. Carmona, and M. H. B. M. Lopes, \"Tradução e adaptação transcultural da System Usability Scale para o português do Brasil,\" Aquichan, vol. 22, no. 2, p. e2228, 2022.",
+        "[18] P. J. Ramos, F. A. Prieto, E. C. Montoya, and C. E. Oliveros, \"Automatic fruit count on coffee branches using computer vision,\" Computers and Electronics in Agriculture, vol. 137, pp. 9–22, 2017, doi: 10.1016/j.compag.2017.03.010.",
+        "[19] H. C. Bazame, J. P. Molin, D. Althoff, and M. Martello, \"Detection, classification, and mapping of coffee fruits during harvest with computer vision,\" Computers and Electronics in Agriculture, vol. 183, p. 106066, 2021, doi: 10.1016/j.compag.2021.106066.",
+        "[20] A. R. Hevner, S. T. March, J. Park, and S. Ram, \"Design science in information systems research,\" MIS Quarterly, vol. 28, no. 1, pp. 75–105, 2004.",
+        "[21] K. Peffers, T. Tuunanen, M. A. Rothenberger, and S. Chatterjee, \"A design science research methodology for information systems research,\" Journal of Management Information Systems, vol. 24, no. 3, pp. 45–77, 2007.",
+        "[22] P. Geurts, D. Ernst, and L. Wehenkel, \"Extremely randomized trees,\" Machine Learning, vol. 63, no. 1, pp. 3–42, 2006.",
+        "[23] F. Pedregosa et al., \"Scikit-learn: Machine Learning in Python,\" Journal of Machine Learning Research, vol. 12, pp. 2825–2830, 2011.",
+        "[24] G. Bradski, \"The OpenCV Library,\" Dr. Dobb's Journal of Software Tools, 2000.",
+        "[25] T.-Y. Lin et al., \"Microsoft COCO: Common Objects in Context,\" in European Conference on Computer Vision (ECCV), pp. 740–755, 2014."
     ]
 
     for ref in referencias:

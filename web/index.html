@@ -1,1068 +1,919 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Viabilidade da Visão Computacional na Classificação Morfológica e Contagem do Nível de Maturação do Café Arara</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
-  
-  <style>
-    :root {
-      --bg: #0b0f19;
-      --card-bg: rgba(30, 41, 59, 0.7);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --text: #e2e8f0;
-      --text-muted: #94a3b8;
-      --amber: #f59e0b;
-      --verde: #10b981;
-      --cereja1: #facc15;
-      --cereja2: #eab308;
-      --passa: #ea580c;
-      --seco: #78350f;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    header {
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--card-border);
-      padding: 1rem 1.5rem;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      width: 100%;
-    }
-    .header-content {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-    }
-    .logo-badge {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #d97706, #fbbf24);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
-    }
-    .brand-title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      color: #f8fafc;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .tag {
-      font-size: 0.68rem;
-      padding: 0.15rem 0.5rem;
-      border-radius: 9999px;
-      background: rgba(245, 158, 11, 0.15);
-      color: #fde68a;
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      font-weight: 600;
-    }
-    .brand-sub { font-size: 0.75rem; color: var(--text-muted); }
-    .status-badges { display: flex; gap: 0.6rem; align-items: center; }
-    .badge-pill {
-      background: rgba(30, 41, 59, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 0.35rem 0.75rem;
-      border-radius: 8px;
-      font-size: 0.72rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #10b981;
-      box-shadow: 0 0 8px #10b981;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Café Arara — maturação na bandeja</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><ellipse cx=%2250%22 cy=%2250%22 rx=%2234%22 ry=%2242%22 fill=%22%23F0A81C%22/><path d=%22M50 12c-10 20-10 56 0 76%22 stroke=%22%23704010%22 stroke-width=%226%22 fill=%22none%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ground: #E3E5DE;
+  --panel: #F4F5F1;
+  --line: #C9CCC2;
+  --ink: #18231B;
+  --ink-2: #4A5A4D;
+  --leaf: #234B2E;
+  --stage-bg: #151915;
+  --danger: #A3261B;
+  /* Cores idênticas às que o servidor usa para desenhar as caixas (utils.CLASS_COLORS_BGR) */
+  --verde: #00A000;
+  --cereja_1: #E6E600;
+  --cereja_2: #FFD700;
+  --passa: #EB6E0F;
+  --seco: #282828;
+  --display: "Bricolage Grotesque", "Segoe UI Variable Display", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --radius-lg: 14px;
+  --radius-sm: 6px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { background: var(--ground); }
+body {
+  margin: 0; color: var(--ink); font: 16px/1.5 var(--body);
+  min-height: 100vh;
+}
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--leaf); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-    /* KPI Grid */
-    main { flex: 1; padding: 1.5rem; }
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 0.85rem;
-      margin-bottom: 1.5rem;
-    }
-    .kpi-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      border-left: 4px solid var(--amber);
-      transition: transform 0.15s, box-shadow 0.15s;
-    }
-    .kpi-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.3);
-    }
-    .kpi-title { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-    .kpi-value { font-size: 1.7rem; font-weight: 800; color: #f8fafc; margin: 0.25rem 0; font-feature-settings: "tnum"; }
-    .kpi-footer { font-size: 0.72rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
-    .kpi-footer strong { color: #f8fafc; }
+/* ---------- Cabeçalho ---------- */
+.top {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  padding: 1.1rem clamp(1rem, 3vw, 2.25rem);
+}
+.brand { display: flex; align-items: center; gap: .8rem; }
+.brand svg { flex: none; }
+.brand h1 { margin: 0; font: 800 1.45rem/1 var(--display); letter-spacing: -.02em; }
+.brand p { margin: .2rem 0 0; color: var(--ink-2); font-size: .92rem; }
+.model-chip {
+  display: flex; align-items: center; gap: .55rem; padding: .45rem .8rem;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+  font-size: .9rem;
+}
+.model-chip .dot { width: .6rem; height: .6rem; border-radius: 50%; background: #999; }
+.model-chip[data-state="online"] .dot { background: var(--verde); box-shadow: 0 0 0 3px #00a00033; }
+.model-chip[data-state="offline"] .dot { background: var(--danger); }
 
-    /* Main 2-column workspace */
-    .workspace-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 1.25rem;
-      margin-bottom: 1.5rem;
-    }
-    @media (max-width: 980px) {
-      .workspace-grid { grid-template-columns: 1fr; }
-    }
+/* ---------- Grade principal ---------- */
+main {
+  display: grid; gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 400px);
+  padding: 0 clamp(1rem, 3vw, 2.25rem) 2.5rem;
+}
+@media (max-width: 960px) { main { grid-template-columns: 1fr; } }
 
-    /* Left: Viewer */
-    .viewer-panel {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 1.2rem;
-      display: flex;
-      flex-direction: column;
-      height: 640px;
-    }
-    .viewer-toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 0.85rem;
-      border-bottom: 1px solid var(--card-border);
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-    .mode-badge {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: rgba(217, 119, 6, 0.15);
-      border: 1px solid rgba(217, 119, 6, 0.35);
-      color: #fbbf24;
-      padding: 0.35rem 0.75rem;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      font-weight: 700;
-    }
-    .toggle-view-btn {
-      background: #1e293b;
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #e2e8f0;
-      padding: 0.35rem 0.75rem;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.15s;
-    }
-    .toggle-view-btn:hover { background: #334155; }
-    .toggle-view-btn.active {
-      background: #0284c7;
-      color: #fff;
-      border-color: #38bdf8;
-    }
+/* ---------- Visor ---------- */
+.viewer-col { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
+.viewer {
+  position: relative; overflow: hidden; border-radius: var(--radius-lg);
+  background: var(--stage-bg); height: clamp(360px, 68vh, 820px);
+  touch-action: none; user-select: none;
+}
+.viewer.has-image { cursor: grab; }
+.viewer.is-dragging { cursor: grabbing; }
+.viewer.is-dropping { outline: 3px dashed var(--cereja_2); outline-offset: -10px; }
+.stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.stage img, .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage img { image-rendering: auto; }
+.empty {
+  position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: .9rem;
+  color: #DCE3D8; padding: 1.5rem;
+}
+.empty h2 { margin: 0; font: 700 clamp(1.6rem, 3.4vw, 2.6rem)/1.1 var(--display); letter-spacing: -.02em; max-width: 18ch; margin-inline: auto; }
+.empty p { margin: 0; color: #9FAE9F; }
+.empty .btn { justify-self: center; }
 
-    .zoom-ctrls { display: flex; align-items: center; gap: 0.35rem; }
-    .btn-sm {
-      background: #1e293b;
-      border: 1px solid rgba(255,255,255,0.08);
-      color: var(--text);
-      padding: 0.35rem 0.65rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.75rem;
-    }
-    .btn-sm:hover { background: #334155; }
+/* Caixas interativas */
+.boxes rect { fill: transparent; stroke-width: 1.6; vector-effect: non-scaling-stroke; transition: opacity .15s; }
+.boxes rect:hover { stroke-width: 3.5; fill: #ffffff22; }
+.boxes .s-verde { stroke: var(--verde); }
+.boxes .s-cereja_1 { stroke: var(--cereja_1); }
+.boxes .s-cereja_2 { stroke: var(--cereja_2); }
+.boxes .s-passa { stroke: var(--passa); }
+.boxes .s-seco { stroke: #E8E8E8; stroke-dasharray: 3 2; }
+.boxes .s-desconhecido { stroke: #888; }
+.boxes[data-focus] rect { opacity: .12; }
+.boxes[data-focus="verde"] .s-verde, .boxes[data-focus="cereja_1"] .s-cereja_1,
+.boxes[data-focus="cereja_2"] .s-cereja_2, .boxes[data-focus="passa"] .s-passa,
+.boxes[data-focus="seco"] .s-seco { opacity: 1; stroke-width: 2.6; }
+.boxes.hide-verde .s-verde, .boxes.hide-cereja_1 .s-cereja_1, .boxes.hide-cereja_2 .s-cereja_2,
+.boxes.hide-passa .s-passa, .boxes.hide-seco .s-seco { display: none; }
 
-    .canvas-container {
-      flex: 1;
-      background: #060911;
-      border-radius: 10px;
-      margin: 0.85rem 0;
-      overflow: auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-    .canvas-container img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      border-radius: 6px;
-      transition: transform 0.15s ease-out;
-      transform-origin: center center;
-    }
+/* Varredura durante a análise */
+.viewer.is-scanning::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 22%; top: -22%;
+  background: linear-gradient(to bottom, transparent, #FFD70040 70%, #FFD700cc 100%);
+  border-bottom: 2px solid var(--cereja_2);
+  animation: scan 1.6s cubic-bezier(.45,0,.55,1) infinite; pointer-events: none;
+}
+@keyframes scan { to { top: 100%; } }
+.scan-label {
+  position: absolute; left: 1rem; bottom: 1rem; padding: .45rem .8rem; border-radius: var(--radius-sm);
+  background: #000000b0; color: #fff; font-size: .95rem;
+}
 
-    /* Chronometer Overlay */
-    .loading-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(6, 9, 17, 0.88);
-      backdrop-filter: blur(8px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      z-index: 20;
-    }
-    .timer-display {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 2.5rem;
-      font-weight: 800;
-      color: #fbbf24;
-      text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
-      background: rgba(15, 23, 42, 0.9);
-      padding: 0.4rem 1.5rem;
-      border-radius: 12px;
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      letter-spacing: 0.05em;
-    }
-    .timer-stage {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #e2e8f0;
-      text-align: center;
-    }
-    .timer-sub {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-    }
-    .spinner {
-      width: 46px;
-      height: 46px;
-      border: 4px solid rgba(245, 158, 11, 0.2);
-      border-top-color: #f59e0b;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+.tooltip {
+  position: absolute; pointer-events: none; padding: .4rem .6rem; border-radius: var(--radius-sm);
+  background: #FFFFFFF0; color: var(--ink); font-size: .85rem; line-height: 1.3; white-space: nowrap;
+  box-shadow: 0 4px 16px #0006; transform: translate(12px, 12px);
+}
+.tooltip b { display: flex; align-items: center; gap: .35rem; }
 
-    /* Right: Controls & Diagnostics */
-    .controls-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .card-title {
-      font-size: 0.82rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #f8fafc;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-    .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
-    .form-group label { font-size: 0.75rem; font-weight: 600; color: #cbd5e1; display: flex; justify-content: space-between; }
-    .form-select, .form-input {
-      background: #0f172a;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 8px;
-      padding: 0.55rem 0.75rem;
-      color: #f8fafc;
-      font-size: 0.78rem;
-      outline: none;
-      width: 100%;
-    }
-    .form-select:focus, .form-input:focus { border-color: var(--amber); }
+.view-tools {
+  position: absolute; top: .75rem; right: .75rem; display: flex; gap: .4rem; flex-wrap: wrap; justify-content: flex-end;
+}
+.seg { display: flex; background: #000000a0; border-radius: var(--radius-sm); padding: 3px; }
+.seg label { position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.seg span { display: block; padding: .3rem .65rem; border-radius: 4px; color: #E8EDE6; font-size: .85rem; }
+.seg input:checked + span { background: #F4F5F1; color: var(--ink); }
+.seg input:disabled + span { opacity: .4; }
+.seg input:focus-visible + span { outline: 2px solid var(--cereja_2); }
+.icon-btn {
+  width: 2.1rem; height: 2.1rem; border: 0; border-radius: var(--radius-sm); cursor: pointer;
+  background: #000000a0; color: #fff; font-size: 1.1rem; line-height: 1;
+}
+.icon-btn:hover { background: #000000d0; }
+.viewer-note {
+  position: absolute; left: .75rem; top: .75rem; max-width: 46ch; padding: .4rem .65rem; border-radius: var(--radius-sm);
+  background: #000000a0; color: #E8EDE6; font-size: .82rem;
+}
 
-    .slider-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.85rem;
-    }
-    .range-input {
-      width: 100%;
-      accent-color: var(--amber);
-      cursor: pointer;
-    }
-    .checkbox-row {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.75rem;
-      color: #cbd5e1;
-      cursor: pointer;
-      user-select: none;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #d97706, #f59e0b);
-      color: #0b0f19;
-      border: none;
-      padding: 0.85rem;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);
-      transition: all 0.15s;
-      width: 100%;
-    }
-    .btn-primary:hover {
-      background: linear-gradient(135deg, #b45309, #d97706);
-      transform: translateY(-1px);
-    }
-    .btn-secondary {
-      background: #1e293b;
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #e2e8f0;
-      padding: 0.55rem;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      width: 100%;
-      transition: background 0.15s;
-    }
-    .btn-secondary:hover { background: #334155; }
+/* ---------- Barra de entrada ---------- */
+.intake {
+  display: flex; gap: .75rem; align-items: center; flex-wrap: wrap;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: .7rem;
+}
+.samples { display: flex; gap: .45rem; overflow-x: auto; flex: 1 1 260px; padding: 2px; scrollbar-width: thin; }
+.samples button {
+  flex: none; width: 64px; height: 48px; padding: 0; border: 2px solid transparent; border-radius: var(--radius-sm);
+  background: #ccc center/cover no-repeat; cursor: pointer;
+}
+.samples button[aria-pressed="true"] { border-color: var(--leaf); box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--leaf); }
+.samples-hint { color: var(--ink-2); font-size: .88rem; }
+.btn {
+  display: inline-flex; align-items: center; gap: .45rem; padding: .62rem 1rem; border-radius: var(--radius-sm);
+  border: 1px solid var(--line); background: #fff; cursor: pointer; font-weight: 700; white-space: nowrap;
+  color: var(--ink); text-decoration: none;
+}
+.btn:hover { border-color: var(--ink-2); }
+.btn-primary { background: var(--leaf); border-color: var(--leaf); color: #fff; }
+.btn-primary:hover { background: #193a22; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.tune { font-size: .9rem; }
+.tune summary { cursor: pointer; color: var(--ink-2); padding: .3rem .2rem; }
+.tune-body { display: grid; gap: .6rem; padding: .6rem .2rem .2rem; min-width: 240px; }
+.tune-body label { display: grid; grid-template-columns: 1fr auto; gap: .1rem .6rem; }
+.tune-body input[type="range"] { grid-column: 1 / -1; accent-color: var(--leaf); }
+.tune-body small { grid-column: 1 / -1; color: var(--ink-2); }
 
-    /* Diagnostic Card */
-    .diag-box {
-      border-radius: 8px;
-      padding: 0.85rem;
-      border: 1px solid rgba(255,255,255,0.1);
-      font-size: 0.75rem;
-      line-height: 1.45;
-    }
-    .diag-header { font-weight: 800; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.35rem; }
+.alert {
+  padding: .7rem .9rem; border-radius: var(--radius-sm); background: #F6DEDA; color: #5A140D;
+  border-left: 4px solid var(--danger);
+}
 
-    /* SVG Donut Chart */
-    .chart-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.5rem 0;
-      position: relative;
-    }
-    .donut-svg {
-      width: 175px;
-      height: 175px;
-      transform: rotate(-90deg);
-    }
-    .donut-circle-bg {
-      fill: none;
-      stroke: #1e293b;
-      stroke-width: 24;
-    }
-    .donut-segment {
-      fill: none;
-      stroke-width: 24;
-      transition: stroke-dasharray 0.5s ease-out;
-    }
-    .donut-center-text {
-      position: absolute;
-      text-align: center;
-      pointer-events: none;
-    }
-    .donut-center-num { font-size: 1.3rem; font-weight: 800; color: #f8fafc; }
-    .donut-center-sub { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; }
+/* ---------- Painel de leitura ---------- */
+.reading { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.1rem 1.15rem; }
+.card h2 { margin: 0 0 .7rem; font: 700 1.05rem/1.2 var(--display); }
+.total { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.total strong { font: 800 clamp(2.6rem, 5vw, 3.6rem)/1 var(--display); letter-spacing: -.03em; }
+.total span { color: var(--ink-2); }
+.verdict { margin-top: .9rem; padding-left: .8rem; border-left: 4px solid var(--verdict, var(--line)); }
+.verdict b { display: block; font: 700 1.1rem/1.25 var(--display); }
+.verdict p { margin: .25rem 0 0; color: var(--ink-2); font-size: .94rem; }
 
-    /* Legend */
-    .legend-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.4rem;
-      font-size: 0.72rem;
-      color: #cbd5e1;
-    }
-    .legend-item { display: flex; align-items: center; gap: 0.35rem; }
-    .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+/* Régua de maturação */
+.ruler { margin-top: 1.4rem; }
+.ruler-apex { position: relative; height: 1.7rem; }
+.ruler-apex .bracket {
+  position: absolute; bottom: 4px; height: 10px; border: 2px solid var(--ink); border-bottom: 0;
+  border-radius: 4px 4px 0 0; transition: left .7s cubic-bezier(.2,.8,.2,1), width .7s cubic-bezier(.2,.8,.2,1);
+}
+.ruler-apex .bracket span {
+  position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+  font-size: .82rem; font-weight: 700;
+}
+.ruler-bar { display: flex; height: 30px; border-radius: var(--radius-sm); overflow: hidden; background: #D2D5CC; }
+.ruler-bar div { height: 100%; width: 0; transition: width .7s cubic-bezier(.2,.8,.2,1), filter .15s; cursor: pointer; }
+.ruler-bar div:hover, .ruler-bar div.is-focus { filter: brightness(1.12) saturate(1.2); box-shadow: inset 0 0 0 2px #fff; }
+.ruler-scale { position: relative; height: 1.4rem; font-size: .75rem; color: var(--ink-2); }
+.ruler-scale .mark { position: absolute; top: 0; transform: translateX(-50%); border-left: 1px dashed var(--ink-2); height: 8px; }
+.ruler-scale .mark span { position: absolute; top: 7px; left: 0; transform: translateX(-50%); white-space: nowrap; }
+.ruler-help { margin: .2rem 0 0; color: var(--ink-2); font-size: .86rem; }
 
-    /* Bottom: Continuous Learning Station */
-    .bottom-panel {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .bottom-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.8rem;
-      padding-bottom: 0.85rem;
-      border-bottom: 1px solid var(--card-border);
-    }
-    .btn-learn {
-      background: #059669;
-      color: #fff;
-      border: none;
-      padding: 0.55rem 1rem;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      transition: background 0.15s;
-    }
-    .btn-learn:hover { background: #047857; }
-    .table-container { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.72rem; text-align: left; }
-    th { background: rgba(15, 23, 42, 0.7); color: var(--text-muted); padding: 0.6rem 0.85rem; font-weight: 600; text-transform: uppercase; }
-    td { padding: 0.55rem 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.04); font-family: monospace; }
-    tr:hover td { background: rgba(255,255,255,0.02); }
+/* Lista de estágios */
+.stages { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.stage-row {
+  width: 100%; display: grid; grid-template-columns: 1.1rem 1fr auto; gap: .2rem .7rem; align-items: center;
+  padding: .55rem .6rem; border: 0; border-radius: var(--radius-sm); background: transparent; text-align: left; cursor: pointer;
+}
+.stage-row:hover, .stage-row.is-focus { background: #E6E8E1; }
+.stage-row .sw { width: 1.1rem; height: 1.1rem; border-radius: 50%; box-shadow: inset 0 0 0 1px #0003; grid-row: span 2; }
+.stage-row .nm { font-weight: 700; display: flex; gap: .4rem; align-items: center; }
+.stage-row .apex-tag { font-size: .72rem; font-weight: 700; padding: .05rem .4rem; border-radius: 999px; background: var(--ink); color: #FFD700; }
+.stage-row .ct { text-align: right; font-weight: 700; }
+.stage-row .ds { color: var(--ink-2); font-size: .85rem; }
+.stage-row .pc { text-align: right; color: var(--ink-2); font-size: .85rem; }
+.stage-row[aria-pressed="false"] { opacity: .45; }
+.stage-row[aria-pressed="false"] .sw { background: transparent !important; box-shadow: inset 0 0 0 2px var(--ink-2); }
+.stages-help { margin: .5rem 0 0; font-size: .84rem; color: var(--ink-2); }
 
-    footer {
-      border-top: 1px solid var(--card-border);
-      padding: 1rem;
-      text-align: center;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-    }
-  </style>
+.actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .9rem; }
+
+/* ---------- Histórico e modelo ---------- */
+.lower {
+  display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr) minmax(300px, 400px);
+  padding: 0 clamp(1rem, 3vw, 2.25rem) 3rem;
+}
+@media (max-width: 960px) { .lower { grid-template-columns: 1fr; } }
+.lower > * { min-width: 0; }
+.lower h2 { display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+th { text-align: left; font-weight: 700; color: var(--ink-2); padding: .4rem .5rem; border-bottom: 1px solid var(--line); }
+td { padding: .5rem; border-bottom: 1px solid #DDE0D7; vertical-align: middle; }
+td.r, th.r { text-align: right; }
+.mini { display: flex; height: 12px; width: 160px; border-radius: 3px; overflow: hidden; background: #D2D5CC; }
+.mini div { height: 100%; }
+.muted { color: var(--ink-2); }
+.model-facts { display: grid; grid-template-columns: auto 1fr; gap: .35rem 1rem; margin: 0 0 1rem; font-size: .94rem; }
+.model-facts dt { color: var(--ink-2); }
+.model-facts dd { margin: 0; font-weight: 700; }
+.learn-row { display: flex; gap: .5rem; align-items: end; flex-wrap: wrap; }
+.learn-row label { display: grid; font-size: .88rem; color: var(--ink-2); }
+.learn-row input { width: 5rem; padding: .55rem; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fff; }
+.tunings { list-style: none; margin: 1rem 0 0; padding: 0; font-size: .88rem; }
+.tunings li { display: flex; justify-content: space-between; gap: .5rem; padding: .35rem 0; border-top: 1px solid #DDE0D7; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  .viewer.is-scanning::after { top: 0; height: 4px; }
+}
+</style>
 </head>
 <body>
 
-  <!-- Top Header -->
-  <header>
-    <div class="container header-content">
-      <div class="brand">
-        <div class="logo-badge">☕</div>
-        <div>
-          <div class="brand-title">
-            <span>TCC Café Arara</span>
-          </div>
-          <div class="brand-sub">Classificação Morfológica e Contagem do Nível de Maturação do Café Arara</div>
-        </div>
-      </div>
-
-      <div class="status-badges">
-        <div class="badge-pill">
-          <div class="pulse-dot"></div>
-          <span>YOLOv8: <strong id="lbl-version" style="color:var(--amber)">v1.0</strong></span>
-        </div>
-        <div class="badge-pill">
-          <span>Ciclos Fine-Tuning: <strong id="lbl-cycles" style="color:#10b981">0</strong></span>
-        </div>
-      </div>
+<header class="top">
+  <div class="brand">
+    <svg width="40" height="40" viewBox="0 0 100 100" aria-hidden="true">
+      <ellipse cx="50" cy="50" rx="34" ry="42" fill="#FFD700"/>
+      <ellipse cx="50" cy="50" rx="34" ry="42" fill="none" stroke="#EB6E0F" stroke-width="5"/>
+      <path d="M50 12c-10 20-10 56 0 76" stroke="#704010" stroke-width="6" fill="none"/>
+    </svg>
+    <div>
+      <h1>Café Arara</h1>
+      <p>Contagem e maturação dos frutos pela foto da bandeja</p>
     </div>
-  </header>
+  </div>
+  <button class="model-chip" id="modelChip" data-state="loading" type="button" aria-describedby="modelChipText">
+    <span class="dot" aria-hidden="true"></span>
+    <span id="modelChipText">Conectando ao modelo…</span>
+  </button>
+</header>
 
-  <!-- Main Content -->
-  <main class="container">
-    
-    <!-- KPI Row -->
-    <div class="kpi-grid">
-      <div class="kpi-card" style="border-left-color: var(--amber);">
-        <div class="kpi-title">Total de Frutos</div>
-        <div class="kpi-value" id="val-total">—</div>
-        <div class="kpi-footer"><span>Cobertura</span> <strong>100% Bandeja</strong></div>
+<main>
+  <section class="viewer-col" aria-label="Foto e detecções">
+    <div class="viewer" id="viewer">
+      <div class="stage" id="stage" hidden>
+        <img id="photo" alt="">
+        <svg class="boxes" id="boxes" preserveAspectRatio="none" aria-hidden="true"></svg>
       </div>
 
-      <div class="kpi-card" style="border-left-color: var(--verde);">
-        <div class="kpi-title">Verde (Imaturo)</div>
-        <div class="kpi-value" id="val-verde" style="color:var(--verde);">—</div>
-        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-verde">0%</strong></div>
+      <div class="empty" id="empty">
+        <h2>Solte aqui a foto da bandeja de café</h2>
+        <p>ou cole com Ctrl+V, ou escolha uma das amostras abaixo</p>
+        <button class="btn btn-primary" type="button" id="pickBtn">Escolher foto</button>
       </div>
 
-      <div class="kpi-card" style="border-left-color: var(--cereja1);">
-        <div class="kpi-title">Cereja I (Início)</div>
-        <div class="kpi-value" id="val-cereja_1" style="color:var(--cereja1);">—</div>
-        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-cereja_1">0%</strong></div>
+      <div class="view-tools" id="viewTools" hidden>
+        <div class="seg" role="radiogroup" aria-label="O que mostrar">
+          <label><input type="radio" name="view" value="photo"><span>Foto</span></label>
+          <label><input type="radio" name="view" value="boxes" checked><span>Detecções</span></label>
+          <label><input type="radio" name="view" value="server"><span>Imagem do servidor</span></label>
+        </div>
+        <button class="icon-btn" type="button" data-zoom="in" aria-label="Aproximar">+</button>
+        <button class="icon-btn" type="button" data-zoom="out" aria-label="Afastar">−</button>
+        <button class="icon-btn" type="button" data-zoom="reset" aria-label="Enquadrar a foto inteira">⤢</button>
       </div>
-
-      <div class="kpi-card" style="border-left-color: var(--cereja2); box-shadow: 0 0 10px rgba(234, 179, 8, 0.15);">
-        <div class="kpi-title">Cereja II (Ápice ★)</div>
-        <div class="kpi-value" id="val-cereja_2" style="color:var(--cereja2);">—</div>
-        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-cereja_2">0%</strong></div>
-      </div>
-
-      <div class="kpi-card" style="border-left-color: var(--passa); box-shadow: 0 0 10px rgba(234, 88, 12, 0.15);">
-        <div class="kpi-title">Passa (Ápice ★)</div>
-        <div class="kpi-value" id="val-passa" style="color:var(--passa);">—</div>
-        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-passa">0%</strong></div>
-      </div>
-
-      <div class="kpi-card" style="border-left-color: var(--seco);">
-        <div class="kpi-title">Seco</div>
-        <div class="kpi-value" id="val-seco" style="color:#d97706;">—</div>
-        <div class="kpi-footer"><span>Proporção</span> <strong id="pct-seco">0%</strong></div>
-      </div>
+      <p class="viewer-note" id="viewerNote" hidden></p>
+      <div class="tooltip" id="tooltip" hidden></div>
+      <div class="scan-label num" id="scanLabel" hidden role="status"></div>
     </div>
 
-    <!-- Workspace -->
-    <div class="workspace-grid">
-      
-      <!-- Left: Visualizer -->
-      <div class="viewer-panel">
-        <div class="viewer-toolbar">
-          <div style="display:flex; align-items:center; gap:0.6rem;">
-            <!-- Modo fixo: Apenas Bounding Boxes -->
-            <div class="mode-badge">
-              <span>🔲 Modo: Bounding Boxes (YOLOv8)</span>
-            </div>
-
-            <!-- Botão alternador entre Imagem Original e BBoxes -->
-            <button id="btn-toggle-view" class="toggle-view-btn" onclick="toggleOriginalView()" style="display:none;">
-              👁️ Alternar Original / BBoxes
-            </button>
-          </div>
-
-          <div style="display:flex; align-items:center; gap:0.6rem;">
-            <!-- Badge de tempo da última inferência -->
-            <span id="badge-last-time" style="display:none; font-size:0.75rem; background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); padding:0.25rem 0.6rem; border-radius:6px; font-family:monospace; font-weight:700;">
-              ⏱️ 0.00s
-            </span>
-
-            <!-- Controles de Zoom -->
-            <div class="zoom-ctrls">
-              <button class="btn-sm" onclick="adjustZoom(-0.2)">🔍 -</button>
-              <span id="lbl-zoom" style="font-size:0.75rem; color:var(--text-muted); width:45px; text-align:center;">100%</span>
-              <button class="btn-sm" onclick="adjustZoom(0.2)">🔍 +</button>
-              <button class="btn-sm" onclick="resetZoom()" title="Redefinir">↺</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="canvas-container" id="canvas-box">
-          <!-- Cronômetro Ativo Durante a Análise -->
-          <div id="loader" class="loading-overlay" style="display:none;">
-            <div class="spinner"></div>
-            <div class="timer-display" id="chronometer">00:00.00</div>
-            <div class="timer-stage" id="timer-stage">Segmentando grade de resolução nativa 1:1...</div>
-            <div class="timer-sub">Processando neurônios YOLOv8 e espectrometria HSV por fruto</div>
-          </div>
-
-          <!-- Imagem exibida (pré-visualização inicial ou resultado com bounding boxes) -->
-          <img id="img-display" src="" alt="Café Arara" style="display:none;" />
-          
-          <div id="empty-state" style="text-align:center; padding:2rem; color:var(--text-muted);">
-            <div style="font-size:3rem; margin-bottom:0.5rem; opacity:0.4;">🌱</div>
-            <div style="font-size:0.9rem; font-weight:600; color:#cbd5e1;">Carregando pré-visualização...</div>
-          </div>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--text-muted); align-items:center;">
-          <span>
-            Imagem: <strong id="lbl-img-name" style="color:#f8fafc;">Carregando...</strong>
-            <span id="lbl-img-status" style="margin-left:0.5rem; color:#38bdf8; font-weight:600;">[Pré-visualização Original]</span>
-          </span>
-          <span>Resolução: <strong id="lbl-img-res" style="color:#f8fafc;">—</strong></span>
-        </div>
+    <div class="intake">
+      <div class="samples" id="samples" aria-label="Amostras do experimento">
+        <span class="samples-hint">Carregando amostras…</span>
       </div>
-
-      <!-- Right: Controls -->
-      <div class="controls-panel">
-        
-        <!-- Controls Card -->
-        <div class="card">
-          <div class="card-title">⚡ Parâmetros de Inferência</div>
-
-          <div class="form-group">
-            <label>
-              <span>Amostras do Experimento</span>
-              <span style="color:var(--amber); font-family:monospace;">15 Fotos 4K</span>
-            </label>
-            <select id="sel-sample" class="form-select" onchange="onSampleChange()">
-              <option value="">Carregando amostras...</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label><span>Ou enviar nova imagem</span></label>
-            <input type="file" id="file-upload" accept="image/*" class="form-input" onchange="onFileUploaded()" />
-          </div>
-
-          <div class="slider-row">
-            <div class="form-group">
-              <label><span>Confiança</span> <span id="lbl-conf" style="color:var(--amber); font-family:monospace;">0.04</span></label>
-              <input type="range" id="rng-conf" min="0.01" max="0.50" step="0.01" value="0.04" class="range-input" oninput="document.getElementById('lbl-conf').innerText = this.value" />
-            </div>
-
-            <div class="form-group">
-              <label><span>Linha da Box</span> <span id="lbl-box-thick" style="color:var(--amber); font-family:monospace;">2px</span></label>
-              <input type="range" id="rng-box-thick" min="1" max="4" step="1" value="2" class="range-input" oninput="document.getElementById('lbl-box-thick').innerText = this.value + 'px'" />
-            </div>
-          </div>
-
-          <label class="checkbox-row">
-            <input type="checkbox" id="chk-auto-learn" checked />
-            <span><strong style="color:var(--amber);">Aprendizado Ativo:</strong> auto-refinar rede a cada teste</span>
+      <input type="file" id="fileInput" accept="image/*" class="sr-only" aria-label="Foto da bandeja">
+      <button class="btn" type="button" id="pickBtn2">Outra foto</button>
+      <button class="btn btn-primary" type="button" id="analyzeBtn" disabled>Contar frutos</button>
+      <details class="tune">
+        <summary>Ajustes da detecção</summary>
+        <div class="tune-body">
+          <label>Confiança mínima <output class="num" id="confOut">0,04</output>
+            <input type="range" id="conf" min="0.01" max="0.5" step="0.01" value="0.04">
+            <small>Mais baixa conta mais frutos, inclusive duvidosos.</small>
           </label>
-
-          <button class="btn-primary" id="btn-run" onclick="runAnalysis()">
-            🚀 Analisar Imagem & Contabilizar
-          </button>
+          <label>Sobreposição tolerada (IoU) <output class="num" id="iouOut">0,65</output>
+            <input type="range" id="iou" min="0.3" max="0.9" step="0.05" value="0.65">
+            <small>Mais alta aceita frutos encostados uns nos outros.</small>
+          </label>
         </div>
-
-        <!-- Diagnostic Card -->
-        <div class="card" style="flex:1;">
-          <div class="card-title">📊 Diagnóstico da Maturação</div>
-
-          <div id="diag-container" class="diag-box" style="display:none;">
-            <div class="diag-header" id="diag-header">● Ponto Ideal de Colheita</div>
-            <div id="diag-desc" style="color:#cbd5e1;">Aguardando execução...</div>
-          </div>
-
-          <!-- Native SVG Donut Chart -->
-          <div class="chart-container" id="chart-box" style="display:none;">
-            <svg class="donut-svg" viewBox="0 0 100 100">
-              <circle class="donut-circle-bg" cx="50" cy="50" r="38"></circle>
-              <!-- 5 Segmentos dinâmicos -->
-              <circle id="seg-verde" class="donut-segment" stroke="var(--verde)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
-              <circle id="seg-cereja_1" class="donut-segment" stroke="var(--cereja1)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
-              <circle id="seg-cereja_2" class="donut-segment" stroke="var(--cereja2)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
-              <circle id="seg-passa" class="donut-segment" stroke="var(--passa)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
-              <circle id="seg-seco" class="donut-segment" stroke="var(--seco)" cx="50" cy="50" r="38" stroke-dasharray="0 238.76" stroke-dashoffset="0"></circle>
-            </svg>
-            <div class="donut-center-text">
-              <div class="donut-center-num" id="donut-total">0</div>
-              <div class="donut-center-sub">Grãos</div>
-            </div>
-          </div>
-
-          <div class="legend-grid" id="chart-legend" style="display:none;">
-            <div class="legend-item"><div class="legend-dot" style="background:var(--verde);"></div><span>Verde</span></div>
-            <div class="legend-item"><div class="legend-dot" style="background:var(--cereja1);"></div><span>Cereja I</span></div>
-            <div class="legend-item"><div class="legend-dot" style="background:var(--cereja2);"></div><span>Cereja II (Ápice ★)</span></div>
-            <div class="legend-item"><div class="legend-dot" style="background:var(--passa);"></div><span>Passa (Ápice ★)</span></div>
-            <div class="legend-item"><div class="legend-dot" style="background:var(--seco);"></div><span>Seco</span></div>
-          </div>
-
-          <button class="btn-secondary" id="btn-export-csv" onclick="exportCSV()" style="display:none;">
-            📥 Baixar Relatório da Análise (CSV)
-          </button>
-        </div>
-
-      </div>
+      </details>
     </div>
+    <div class="alert" id="error" role="alert" hidden></div>
+  </section>
 
-    <!-- Bottom: Continuous Learning -->
-    <div class="bottom-panel">
-      <div class="bottom-header">
-        <div>
-          <div style="font-size:0.95rem; font-weight:800; color:#f8fafc; display:flex; align-items:center; gap:0.4rem;">
-            <span>🧠 Estação de Aprendizado Contínuo (Machine Learning)</span>
-          </div>
-          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">
-            Ajuste fino incremental com congelamento de camadas convolucionais (freeze=10) sem perda de conhecimento prévio.
-          </div>
-        </div>
-
-        <button class="btn-learn" id="btn-force-learn" onclick="forceFineTuning()">
-          <span>⚡ Forçar Ciclo de Aperfeiçoamento</span>
-        </button>
+  <aside class="reading" aria-label="Leitura do lote">
+    <section class="card" aria-live="polite">
+      <div class="total">
+        <strong class="num" id="total">—</strong>
+        <span id="totalLabel">frutos contados</span>
+      </div>
+      <div class="verdict" id="verdict">
+        <b id="verdictTitle">Aguardando uma foto</b>
+        <p id="verdictText">Depois da contagem, aqui aparece se o lote está no ápice da qualidade e o que fazer.</p>
       </div>
 
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Versão do Modelo</th>
-              <th>Data e Hora</th>
-              <th>Épocas</th>
-              <th>Tempo de Treino</th>
-              <th>Dispositivo</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="tbl-history">
-            <tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--text-muted);">Carregando histórico...</td></tr>
-          </tbody>
-        </table>
+      <div class="ruler" aria-label="Régua de maturação">
+        <div class="ruler-apex"><div class="bracket" id="bracket" hidden><span class="num" id="bracketText"></span></div></div>
+        <div class="ruler-bar" id="rulerBar"></div>
+        <div class="ruler-scale" id="rulerScale"></div>
+        <p class="ruler-help">Do fruto mais novo ao mais seco. O ápice é Cereja II mais Passa; acima de 50% o lote está no ponto.</p>
       </div>
+    </section>
+
+    <section class="card">
+      <h2>Estágios de maturação</h2>
+      <ul class="stages" id="stages"></ul>
+      <p class="stages-help">Passe o mouse para destacar na foto. Clique para esconder ou mostrar.</p>
+      <div class="actions" id="resultActions" hidden>
+        <a class="btn" id="downloadImg" download="cafe-arara-anotada.jpg">Baixar imagem anotada</a>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<section class="lower">
+  <section class="card" aria-labelledby="histTitle">
+    <h2 id="histTitle">Contagens anteriores
+      <button class="btn" type="button" id="csvBtn" disabled>Baixar planilha (CSV)</button>
+    </h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Quando</th><th>Imagem</th><th class="r">Frutos</th><th>Maturação</th><th class="r">Ápice</th></tr></thead>
+        <tbody id="history"><tr><td colspan="5" class="muted">Nenhuma contagem ainda.</td></tr></tbody>
+      </table>
     </div>
+  </section>
 
-  </main>
+  <section class="card" id="modelCard" aria-labelledby="modelTitle" tabindex="-1">
+    <h2 id="modelTitle">Modelo</h2>
+    <dl class="model-facts" id="modelFacts"><dt>Estado</dt><dd>Conectando…</dd></dl>
+    <div class="learn-row">
+      <label>Épocas <input type="number" id="epochs" min="1" max="20" value="3"></label>
+      <button class="btn" type="button" id="learnBtn">Reajustar o modelo</button>
+    </div>
+    <p class="muted" style="font-size:.86rem;margin:.5rem 0 0">Treina de novo sobre o dataset em <code>data/</code> e substitui os pesos atuais (o anterior fica como backup). Na CPU leva minutos.</p>
+    <p class="muted num" id="learnStatus" role="status" style="font-size:.9rem"></p>
+    <ul class="tunings" id="tunings"></ul>
+  </section>
+</section>
 
-  <footer>
-    Trabalho de Conclusão de Curso (TCC) — Viabilidade da Visão Computacional na Classificação Morfológica e Contagem do Nível de Maturação do Café Arara • 2026
-  </footer>
+<script>
+"use strict";
 
-  <script>
-    let currentResult = null;
-    let rawPreviewSrc = '';
-    let showingAnnotated = false;
-    let currentZoom = 1;
+// Servido pelo web/server.py do projeto, a API está na mesma origem.
+// Aberto direto do disco (file://) ou de outro servidor, use ?api=http://host:porta
+const API = new URLSearchParams(location.search).get("api")
+  ?? (location.protocol === "file:" ? "http://localhost:8501" : "");
 
-    // Variáveis do Cronômetro
-    let chronoTimer = null;
-    let chronoStartTime = 0;
+const STAGES = [
+  { key: "verde",    name: "Verde",     desc: "Imaturo, ainda em desenvolvimento" },
+  { key: "cereja_1", name: "Cereja I",  desc: "Começa a amarelar" },
+  { key: "cereja_2", name: "Cereja II", desc: "Maturação plena, amarelo-âmbar", apex: true },
+  { key: "passa",    name: "Passa",     desc: "Começa a secar, pico de açúcar", apex: true },
+  { key: "seco",     name: "Seco",      desc: "Seco e escuro, separar na catação" },
+];
+const STAGE_BY_KEY = Object.fromEntries(STAGES.map(s => [s.key, s]));
+const APEX_THRESHOLD = 50; // mesmo limiar de inference_engine.py
+const color = key => `var(--${key})`;
+const fmtPct = v => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+const fmtInt = v => v.toLocaleString("pt-BR");
+const $ = id => document.getElementById(id);
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    window.onload = function() {
-      fetchStatus();
-      fetchSamples();
-    };
+const state = {
+  source: null,        // { file } | { sample }
+  photoUrl: null,      // URL da foto original
+  dims: null,          // { w, h } em pixels da foto original
+  result: null,
+  hidden: new Set(),   // estágios escondidos no visor
+  view: "boxes",
+  busy: false,
+};
 
-    async function fetchStatus() {
-      try {
-        const res = await fetch('/api/status');
-        const data = await res.json();
-        document.getElementById('lbl-version').innerText = data.model_version || 'v1.0';
-        document.getElementById('lbl-cycles').innerText = data.total_fine_tunings || 0;
-        renderHistoryTable(data.history || []);
-      } catch (e) {
-        console.error('Erro status:', e);
-      }
+// ---------- Acesso à API ----------
+class ApiError extends Error {}
+
+async function api(path, init) {
+  let res;
+  try {
+    res = await fetch(API + path, init);
+  } catch {
+    throw new ApiError(`O servidor do modelo não respondeu em ${API || location.origin}. Ele está rodando (INICIAR_TCC.bat)?`);
+  }
+  const body = await res.json().catch(() => null);
+  if (!res.ok) throw new ApiError(body?.error ?? body?.message ?? `O servidor devolveu o erro ${res.status}.`);
+  return body;
+}
+
+/** Confere o formato da resposta de /api/analyze antes de confiar nela. */
+function parseAnalysis(data) {
+  const ok = data && Number.isFinite(data.total_graos)
+    && data.counts && data.ratios && data.dimensoes
+    && Number.isFinite(data.dimensoes.largura) && Number.isFinite(data.dimensoes.altura);
+  if (!ok) throw new ApiError("A resposta do servidor veio num formato inesperado.");
+  const detections = Array.isArray(data.detections) ? data.detections : (data.detections_sample ?? []);
+  return { ...data, detections, isComplete: detections.length >= data.total_graos };
+}
+
+function showError(message) {
+  $("error").textContent = message;
+  $("error").hidden = !message;
+}
+
+// ---------- Escolha da foto ----------
+function setSource(source, photoUrl) {
+  if (state.photoUrl?.startsWith("blob:")) URL.revokeObjectURL(state.photoUrl);
+  state.source = source;
+  state.photoUrl = photoUrl;
+  state.result = null;
+  showError("");
+  renderReading(null);
+  for (const b of $("samples").querySelectorAll("button")) {
+    b.setAttribute("aria-pressed", String(b.dataset.name === source.sample));
+  }
+  $("analyzeBtn").disabled = state.busy;
+  const photo = $("photo");
+  photo.onload = () => {
+    state.dims = { w: photo.naturalWidth, h: photo.naturalHeight };
+    $("stage").hidden = false;
+    $("empty").hidden = true;
+    $("viewTools").hidden = false;
+    $("viewer").classList.add("has-image");
+    applyViewMode();
+    fitStage();
+  };
+  photo.onerror = () => {
+    // Formatos que o navegador não exibe (ex.: HEIC) ainda são analisados pelo servidor.
+    $("empty").hidden = false;
+    $("stage").hidden = true;
+    $("empty").querySelector("h2").textContent = "Sem pré-visualização para este arquivo";
+    $("empty").querySelector("p").textContent = "O navegador não exibe este formato, mas a contagem funciona. Clique em Contar frutos.";
+  };
+  photo.src = photoUrl;
+  photo.alt = source.file ? `Foto enviada: ${source.file.name}` : `Amostra ${source.sample}`;
+}
+
+function selectFile(file) {
+  if (!file) return;
+  if (!file.type.startsWith("image/") && file.type !== "") {
+    showError(`"${file.name}" não é uma imagem.`);
+    return;
+  }
+  setSource({ file }, URL.createObjectURL(file));
+}
+
+function selectSample(name) {
+  setSource({ sample: name }, `${API}/api/sample/${encodeURIComponent(name)}`);
+}
+
+// ---------- Análise ----------
+async function analyze() {
+  if (!state.source || state.busy) return;
+  const fd = new FormData();
+  if (state.source.file) fd.append("file", state.source.file);
+  else fd.append("sample_name", state.source.sample);
+  fd.append("confidence", $("conf").value);
+  fd.append("iou", $("iou").value);
+
+  setBusy(true);
+  showError("");
+  const started = performance.now();
+  const tick = () => { $("scanLabel").textContent = `Procurando frutos… ${((performance.now() - started) / 1000).toFixed(1).replace(".", ",")} s`; };
+  tick();
+  const timer = setInterval(tick, 100);
+  try {
+    const result = parseAnalysis(await api("/api/analyze", { method: "POST", body: fd }));
+    result.elapsed = (performance.now() - started) / 1000;
+    state.result = result;
+    state.hidden.clear();
+    state.dims = { w: result.dimensoes.largura, h: result.dimensoes.altura };
+    state.view = result.isComplete ? "boxes" : "server";
+    if ($("stage").hidden) { $("photo").src = result.annotated_image_b64; state.view = "server"; }
+    renderReading(result);
+    renderBoxes(result);
+    applyViewMode();
+    loadHistory();
+  } catch (err) {
+    showError(err instanceof ApiError ? err.message : `Falha inesperada: ${err.message}`);
+  } finally {
+    clearInterval(timer);
+    setBusy(false);
+  }
+}
+
+function setBusy(busy) {
+  state.busy = busy;
+  $("analyzeBtn").disabled = busy || !state.source;
+  $("analyzeBtn").textContent = busy ? "Contando…" : "Contar frutos";
+  $("viewer").classList.toggle("is-scanning", busy);
+  $("scanLabel").hidden = !busy;
+}
+
+// ---------- Painel de leitura ----------
+function renderStagesList(result) {
+  $("stages").innerHTML = STAGES.map(s => {
+    const count = result ? fmtInt(result.counts[s.key] ?? 0) : "—";
+    const pct = result ? fmtPct(result.ratios[s.key] ?? 0) : "";
+    return `<li><button type="button" class="stage-row" data-stage="${s.key}" aria-pressed="${!state.hidden.has(s.key)}">
+      <span class="sw" style="background:${color(s.key)}"></span>
+      <span class="nm">${s.name}${s.apex ? '<span class="apex-tag">ápice</span>' : ""}</span>
+      <span class="ct num">${count}</span>
+      <span class="ds">${s.desc}</span>
+      <span class="pc num">${pct}</span>
+    </button></li>`;
+  }).join("");
+}
+
+function renderRuler(result) {
+  const ratios = result?.ratios ?? {};
+  $("rulerBar").innerHTML = STAGES.map(s =>
+    `<div data-stage="${s.key}" style="background:${color(s.key)}" title="${s.name}: ${fmtPct(ratios[s.key] ?? 0)}"></div>`
+  ).join("");
+
+  // Larguras aplicadas no quadro seguinte para a barra crescer a partir de zero.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    for (const el of $("rulerBar").children) el.style.width = `${ratios[el.dataset.stage] ?? 0}%`;
+  }));
+
+  const bracket = $("bracket");
+  bracket.hidden = !result;
+  $("rulerScale").innerHTML = `<span class="mark" style="left:${APEX_THRESHOLD}%"><span>50%</span></span>`;
+  if (!result) return;
+  const left = (ratios.verde ?? 0) + (ratios.cereja_1 ?? 0);
+  const apex = (ratios.cereja_2 ?? 0) + (ratios.passa ?? 0);
+  bracket.style.left = `${left}%`;
+  bracket.style.width = `${apex}%`;
+  $("bracketText").textContent = `Ápice ${fmtPct(apex)}`;
+  // Rótulo não sai da barra quando o ápice está nas pontas.
+  $("bracketText").style.left = apex < 8 ? (left > 50 ? "auto" : "0") : "50%";
+  $("bracketText").style.right = apex < 8 && left > 50 ? "0" : "auto";
+  $("bracketText").style.transform = apex < 8 ? "none" : "translateX(-50%)";
+}
+
+function renderReading(result) {
+  renderStagesList(result);
+  renderRuler(result);
+  $("resultActions").hidden = !result;
+  if (!result) {
+    $("total").textContent = "—";
+    $("totalLabel").textContent = "frutos contados";
+    $("verdictTitle").textContent = state.source ? "Pronto para contar" : "Aguardando uma foto";
+    $("verdictText").textContent = state.source
+      ? "Clique em Contar frutos. Fotos grandes de bandeja podem levar alguns segundos."
+      : "Depois da contagem, aqui aparece se o lote está no ápice da qualidade e o que fazer.";
+    $("verdict").style.removeProperty("--verdict");
+    return;
+  }
+  countUp($("total"), result.total_graos);
+  $("totalLabel").textContent = `frutos contados em ${result.elapsed.toFixed(1).replace(".", ",")} s`;
+  $("verdictTitle").textContent = result.status_colheita;
+  $("verdictText").textContent = result.recomendacao;
+  $("verdict").style.setProperty("--verdict", result.badge_cor);
+  $("downloadImg").href = result.annotated_image_b64;
+}
+
+function countUp(el, target) {
+  if (reducedMotion) { el.textContent = fmtInt(target); return; }
+  const start = performance.now();
+  const step = now => {
+    const t = Math.min(1, (now - start) / 700);
+    el.textContent = fmtInt(Math.round(target * (1 - (1 - t) ** 3)));
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// ---------- Caixas sobre a foto ----------
+function renderBoxes(result) {
+  const svg = $("boxes");
+  svg.setAttribute("viewBox", `0 0 ${result.dimensoes.largura} ${result.dimensoes.altura}`);
+  svg.innerHTML = result.detections.map((d, i) => {
+    const [x1, y1, x2, y2] = d.bbox;
+    const cls = STAGE_BY_KEY[d.class_name] ? d.class_name : "desconhecido";
+    return `<rect class="s-${cls}" data-i="${i}" x="${x1}" y="${y1}" width="${x2 - x1}" height="${y2 - y1}" rx="2"/>`;
+  }).join("");
+  applyStageFilters();
+}
+
+function applyStageFilters() {
+  const svg = $("boxes");
+  for (const s of STAGES) svg.classList.toggle(`hide-${s.key}`, state.hidden.has(s.key));
+  for (const row of document.querySelectorAll(".stage-row")) {
+    row.setAttribute("aria-pressed", String(!state.hidden.has(row.dataset.stage)));
+  }
+}
+
+function setFocusStage(key) {
+  const svg = $("boxes");
+  if (key) svg.dataset.focus = key; else delete svg.dataset.focus;
+  for (const el of document.querySelectorAll("[data-stage]")) el.classList.toggle("is-focus", el.dataset.stage === key);
+}
+
+function applyViewMode() {
+  const r = state.result;
+  const serverRadio = document.querySelector('input[name="view"][value="server"]');
+  const boxesRadio = document.querySelector('input[name="view"][value="boxes"]');
+  serverRadio.disabled = !r;
+  boxesRadio.disabled = !r || !r.isComplete;
+  if ((state.view === "server" && !r) || (state.view === "boxes" && boxesRadio.disabled)) state.view = r ? "server" : "photo";
+  document.querySelector(`input[name="view"][value="${state.view}"]`).checked = true;
+
+  const usingServer = state.view === "server" && r;
+  const photo = $("photo");
+  const wanted = usingServer ? r.annotated_image_b64 : state.photoUrl;
+  if (wanted && photo.getAttribute("src") !== wanted && !(usingServer === false && $("stage").hidden)) {
+    photo.onload = null; // a troca de base não reenquadra a foto
+    photo.src = wanted;
+  }
+  $("boxes").style.display = state.view === "boxes" ? "" : "none";
+
+  const note = $("viewerNote");
+  note.hidden = !(r && !r.isComplete);
+  note.textContent = r && !r.isComplete
+    ? `O servidor devolveu só ${r.detections.length} de ${fmtInt(r.total_graos)} caixas, então as detecções interativas ficam desligadas. Veja o LEIA-ME para ativar.`
+    : "";
+}
+
+// ---------- Zoom e arraste ----------
+const view = { s: 1, x: 0, y: 0, fit: 1 };
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+function fitStage() {
+  if (!state.dims) return;
+  const vw = $("viewer").clientWidth, vh = $("viewer").clientHeight;
+  view.fit = Math.min(vw / state.dims.w, vh / state.dims.h);
+  view.s = 1;
+  view.x = (vw - state.dims.w * view.fit) / 2;
+  view.y = (vh - state.dims.h * view.fit) / 2;
+  $("stage").style.width = `${state.dims.w * view.fit}px`;
+  $("stage").style.height = `${state.dims.h * view.fit}px`;
+  applyView();
+}
+
+function applyView() {
+  $("stage").style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.s})`;
+}
+
+function zoomAt(px, py, factor) {
+  const s = clamp(view.s * factor, 1, 16);
+  const k = s / view.s;
+  view.x = px - (px - view.x) * k;
+  view.y = py - (py - view.y) * k;
+  view.s = s;
+  if (s === 1) { fitStage(); return; }
+  applyView();
+}
+
+function wireViewer() {
+  const viewer = $("viewer");
+  viewer.addEventListener("wheel", e => {
+    if ($("stage").hidden) return;
+    e.preventDefault();
+    const r = viewer.getBoundingClientRect();
+    zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.2 : 1 / 1.2);
+  }, { passive: false });
+
+  let drag = null;
+  viewer.addEventListener("pointerdown", e => {
+    if ($("stage").hidden || e.target.closest("button, label, .seg")) return;
+    drag = { x: e.clientX - view.x, y: e.clientY - view.y, moved: false };
+    viewer.setPointerCapture(e.pointerId);
+  });
+  viewer.addEventListener("pointermove", e => {
+    if (drag) {
+      drag.moved = true;
+      viewer.classList.add("is-dragging");
+      view.x = e.clientX - drag.x;
+      view.y = e.clientY - drag.y;
+      applyView();
+      $("tooltip").hidden = true;
+      return;
     }
+    showTooltip(e);
+  });
+  const endDrag = () => { drag = null; viewer.classList.remove("is-dragging"); };
+  viewer.addEventListener("pointerup", endDrag);
+  viewer.addEventListener("pointercancel", endDrag);
+  viewer.addEventListener("pointerleave", () => { $("tooltip").hidden = true; });
+  viewer.addEventListener("dblclick", e => {
+    if (e.target.closest("button, label")) return;
+    fitStage();
+  });
 
-    async function fetchSamples() {
-      try {
-        const res = await fetch('/api/samples');
-        const data = await res.json();
-        const sel = document.getElementById('sel-sample');
-        sel.innerHTML = '';
-        const list = data.samples || [];
-        list.forEach(s => {
-          const opt = document.createElement('option');
-          opt.value = s.name;
-          opt.innerText = `${s.name} (${s.size_mb} MB)`;
-          sel.appendChild(opt);
-        });
+  $("viewTools").addEventListener("click", e => {
+    const kind = e.target.closest("[data-zoom]")?.dataset.zoom;
+    if (!kind) return;
+    if (kind === "reset") { fitStage(); return; }
+    zoomAt(viewer.clientWidth / 2, viewer.clientHeight / 2, kind === "in" ? 1.5 : 1 / 1.5);
+  });
+  $("viewTools").addEventListener("change", e => {
+    if (e.target.name !== "view") return;
+    state.view = e.target.value;
+    applyViewMode();
+  });
 
-        // Carregar pré-visualização da primeira amostra automaticamente
-        if (list.length > 0) {
-          sel.value = list[0].name;
-          setPreviewSample(list[0].name);
-        }
-      } catch (e) {
-        console.error('Erro samples:', e);
-      }
+  // Arrastar e soltar
+  viewer.addEventListener("dragover", e => { e.preventDefault(); viewer.classList.add("is-dropping"); });
+  viewer.addEventListener("dragleave", () => viewer.classList.remove("is-dropping"));
+  viewer.addEventListener("drop", e => {
+    e.preventDefault();
+    viewer.classList.remove("is-dropping");
+    selectFile(e.dataTransfer.files[0]);
+  });
+  new ResizeObserver(() => fitStage()).observe(viewer);
+}
+
+function showTooltip(e) {
+  const tip = $("tooltip");
+  const rect = e.target.closest?.("rect");
+  if (!rect || !state.result) { tip.hidden = true; return; }
+  const d = state.result.detections[Number(rect.dataset.i)];
+  const s = STAGE_BY_KEY[d.class_name];
+  const r = $("viewer").getBoundingClientRect();
+  const w = d.bbox[2] - d.bbox[0], h = d.bbox[3] - d.bbox[1];
+  tip.innerHTML = `<b><span class="sw" style="display:inline-block;width:.7rem;height:.7rem;border-radius:50%;background:${color(d.class_name)};box-shadow:inset 0 0 0 1px #0004"></span>${s?.name ?? d.class_name}</b>
+    <span class="num">Confiança ${fmtPct(d.confidence * 100)} · ${w}×${h} px</span>`;
+  tip.hidden = false;
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  tip.style.left = `${Math.min(x, r.width - tip.offsetWidth - 20)}px`;
+  tip.style.top = `${Math.min(y, r.height - tip.offsetHeight - 20)}px`;
+}
+
+// ---------- Ligação régua/lista ↔ foto ----------
+function wireStageLinks() {
+  for (const container of [$("stages"), $("rulerBar")]) {
+    container.addEventListener("pointerover", e => setFocusStage(e.target.closest("[data-stage]")?.dataset.stage ?? null));
+    container.addEventListener("pointerleave", () => setFocusStage(null));
+    container.addEventListener("focusin", e => setFocusStage(e.target.closest("[data-stage]")?.dataset.stage ?? null));
+    container.addEventListener("focusout", () => setFocusStage(null));
+    container.addEventListener("click", e => {
+      const key = e.target.closest("[data-stage]")?.dataset.stage;
+      if (!key) return;
+      if (state.hidden.has(key)) state.hidden.delete(key); else state.hidden.add(key);
+      applyStageFilters();
+    });
+  }
+}
+
+// ---------- Amostras, histórico, modelo ----------
+async function loadSamples() {
+  const box = $("samples");
+  try {
+    const { samples } = await api("/api/samples");
+    if (!samples.length) {
+      box.innerHTML = '<span class="samples-hint">Sem amostras. Coloque fotos em <code>data/raw/</code> para aparecerem aqui.</span>';
+      return;
     }
+    box.innerHTML = samples.map(s => {
+      const url = `${API}/api/sample/${encodeURIComponent(s.name)}`;
+      return `<button type="button" data-name="${s.name.replace(/"/g, "&quot;")}" aria-pressed="false"
+        aria-label="Amostra ${s.name}" title="${s.name} (${s.size_mb.toLocaleString("pt-BR")} MB)" style="background-image:url('${url}')"></button>`;
+    }).join("");
+  } catch {
+    box.innerHTML = '<span class="samples-hint">Amostras indisponíveis.</span>';
+  }
+}
 
-    function setPreviewSample(sampleName) {
-      rawPreviewSrc = `/api/sample/${sampleName}`;
-      showingAnnotated = false;
-      displayImage(rawPreviewSrc, sampleName, '[Pré-visualização Original]');
-      document.getElementById('btn-toggle-view').style.display = 'none';
-    }
+let historyRows = [];
+async function loadHistory() {
+  try {
+    historyRows = (await api("/api/history")).history ?? [];
+  } catch { return; }
+  $("csvBtn").disabled = !historyRows.length;
+  if (!historyRows.length) return;
+  $("history").innerHTML = historyRows.map(h => {
+    const when = h.data_hora.replace(/^(\d{4})-(\d\d)-(\d\d) (\d\d:\d\d).*/, "$3/$2 $4");
+    const bar = STAGES.map(s => `<div style="width:${h[`pct_${s.key}`] ?? 0}%;background:${color(s.key)}"></div>`).join("");
+    const apex = h.pct_apice_qualidade ?? 0;
+    return `<tr>
+      <td class="num">${when}</td>
+      <td>${escapeHtml(h.imagem)}</td>
+      <td class="r num">${fmtInt(h.total_graos)}</td>
+      <td><div class="mini" title="Verde ${fmtPct(h.pct_verde)}, Cereja I ${fmtPct(h.pct_cereja_1)}, Cereja II ${fmtPct(h.pct_cereja_2)}, Passa ${fmtPct(h.pct_passa)}, Seco ${fmtPct(h.pct_seco)}">${bar}</div></td>
+      <td class="r num" style="font-weight:${apex >= APEX_THRESHOLD ? 700 : 400}">${fmtPct(apex)}</td>
+    </tr>`;
+  }).join("");
+}
 
-    function displayImage(src, name, statusLabel) {
-      const img = document.getElementById('img-display');
-      img.src = src;
-      img.style.display = 'block';
-      document.getElementById('empty-state').style.display = 'none';
-      document.getElementById('lbl-img-name').innerText = name;
-      document.getElementById('lbl-img-status').innerText = statusLabel;
-      
-      // Carregar resolução natural da imagem
-      img.onload = function() {
-        document.getElementById('lbl-img-res').innerText = `${img.naturalWidth}×${img.naturalHeight}px`;
-      };
-    }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
 
-    function onSampleChange() {
-      document.getElementById('file-upload').value = '';
-      const sampleName = document.getElementById('sel-sample').value;
-      if (sampleName) {
-        setPreviewSample(sampleName);
-      }
-    }
+function downloadCsv() {
+  const cols = Object.keys(historyRows[0]);
+  const cell = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const csv = [cols.join(";"), ...historyRows.map(r => cols.map(c => cell(r[c])).join(";"))].join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
+  a.download = "contagens-cafe-arara.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 
-    function onFileUploaded() {
-      const fileInput = document.getElementById('file-upload');
-      if (fileInput.files && fileInput.files[0]) {
-        const file = fileInput.files[0];
-        document.getElementById('sel-sample').value = '';
-        rawPreviewSrc = URL.createObjectURL(file);
-        showingAnnotated = false;
-        displayImage(rawPreviewSrc, file.name, '[Pré-visualização do Arquivo]');
-        document.getElementById('btn-toggle-view').style.display = 'none';
-      }
-    }
+async function loadStatus() {
+  const chip = $("modelChip");
+  try {
+    const st = await api("/api/status");
+    chip.dataset.state = "online";
+    $("modelChipText").textContent = `Modelo ${st.model_version}`;
+    $("modelFacts").innerHTML = `
+      <dt>Estado</dt><dd>Online</dd>
+      <dt>Versão</dt><dd>${escapeHtml(st.model_version)}</dd>
+      <dt>Reajustes feitos</dt><dd class="num">${st.total_fine_tunings}</dd>
+      <dt>Pesos alterados em</dt><dd class="num">${escapeHtml(st.last_modified)}</dd>
+      <dt>Tamanho dos pesos</dt><dd class="num">${st.weights_size_mb.toLocaleString("pt-BR")} MB</dd>`;
+    $("tunings").innerHTML = (st.history ?? []).map(t =>
+      `<li><span><b>${escapeHtml(t.version)}</b> <span class="muted num">${escapeHtml(t.timestamp)}</span></span>
+       <span class="muted num">${t.epochs} épocas, ${Math.round(t.elapsed_seconds)} s</span></li>`).join("");
+  } catch (err) {
+    chip.dataset.state = "offline";
+    $("modelChipText").textContent = "Modelo fora do ar";
+    $("modelFacts").innerHTML = `<dt>Estado</dt><dd>${escapeHtml(err.message)}</dd>`;
+  }
+}
 
-    function toggleOriginalView() {
-      if (!currentResult) return;
-      const btn = document.getElementById('btn-toggle-view');
-      const img = document.getElementById('img-display');
-      
-      if (showingAnnotated) {
-        img.src = rawPreviewSrc;
-        showingAnnotated = false;
-        btn.classList.add('active');
-        btn.innerText = '🖼️ Vendo: Imagem Original';
-        document.getElementById('lbl-img-status').innerText = '[Imagem Original]';
-      } else {
-        img.src = currentResult.annotated_image_b64;
-        showingAnnotated = true;
-        btn.classList.remove('active');
-        btn.innerText = '🔲 Vendo: Bounding Boxes';
-        document.getElementById('lbl-img-status').innerText = '[Detectado com BBoxes]';
-      }
-    }
+async function learn() {
+  const epochs = clamp(Math.round(Number($("epochs").value) || 3), 1, 20);
+  if (!confirm(`Reajustar o modelo com ${epochs} épocas? Os pesos atuais serão substituídos (o anterior fica como backup).`)) return;
+  const btn = $("learnBtn");
+  btn.disabled = true;
+  const started = performance.now();
+  const tick = () => { $("learnStatus").textContent = `Treinando… ${Math.round((performance.now() - started) / 1000)} s`; };
+  tick();
+  const timer = setInterval(tick, 1000);
+  try {
+    const res = await api("/api/learn", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ epochs }),
+    });
+    $("learnStatus").textContent = `Pronto: modelo ${res.details?.new_version ?? ""} em ${Math.round(res.details?.elapsed_seconds ?? 0)} s.`;
+    loadStatus();
+  } catch (err) {
+    $("learnStatus").textContent = `O reajuste falhou: ${err.message}`;
+  } finally {
+    clearInterval(timer);
+    btn.disabled = false;
+  }
+}
 
-    function renderHistoryTable(history) {
-      const tbody = document.getElementById('tbl-history');
-      if (!history || history.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1rem; color:var(--text-muted);">Nenhum ciclo incremental registrado. Versão base ativa.</td></tr>';
-        return;
-      }
-      tbody.innerHTML = history.map(h => `
-        <tr>
-          <td><strong style="color:var(--amber);">${h.version}</strong></td>
-          <td style="color:var(--text-muted);">${h.timestamp}</td>
-          <td>${h.epochs} épocas</td>
-          <td style="color:#10b981;">${h.elapsed_seconds}s</td>
-          <td style="text-transform:uppercase;">${h.device}</td>
-          <td><span style="background:rgba(16,185,129,0.2); color:#6ee7b7; padding:2px 8px; border-radius:999px; font-size:0.65rem;">${h.status}</span></td>
-        </tr>
-      `).join('');
-    }
+// ---------- Início ----------
+function wireInputs() {
+  const pick = () => $("fileInput").click();
+  $("pickBtn").addEventListener("click", pick);
+  $("pickBtn2").addEventListener("click", pick);
+  $("fileInput").addEventListener("change", e => { selectFile(e.target.files[0]); e.target.value = ""; });
+  $("samples").addEventListener("click", e => {
+    const name = e.target.closest("button[data-name]")?.dataset.name;
+    if (name) selectSample(name);
+  });
+  document.addEventListener("paste", e => {
+    const file = [...e.clipboardData.files].find(f => f.type.startsWith("image/"));
+    if (file) selectFile(file);
+  });
+  $("analyzeBtn").addEventListener("click", analyze);
+  for (const [id, out] of [["conf", "confOut"], ["iou", "iouOut"]]) {
+    $(id).addEventListener("input", e => { $(out).textContent = Number(e.target.value).toLocaleString("pt-BR", { minimumFractionDigits: 2 }); });
+  }
+  $("csvBtn").addEventListener("click", downloadCsv);
+  $("learnBtn").addEventListener("click", learn);
+  $("modelChip").addEventListener("click", () => { $("modelCard").scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" }); $("modelCard").focus({ preventScroll: true }); });
+}
 
-    function adjustZoom(delta) {
-      currentZoom = Math.min(3, Math.max(0.6, currentZoom + delta));
-      applyZoom();
-    }
-    function resetZoom() {
-      currentZoom = 1;
-      applyZoom();
-    }
-    function applyZoom() {
-      document.getElementById('lbl-zoom').innerText = `${Math.round(currentZoom * 100)}%`;
-      document.getElementById('img-display').style.transform = `scale(${currentZoom})`;
-    }
-
-    // Cronômetro em Tempo Real
-    function startChronometer() {
-      chronoStartTime = performance.now();
-      const display = document.getElementById('chronometer');
-      const stage = document.getElementById('timer-stage');
-      
-      chronoTimer = setInterval(() => {
-        const elapsedMs = performance.now() - chronoStartTime;
-        const totalSec = elapsedMs / 1000;
-        const mins = Math.floor(totalSec / 60);
-        const secs = Math.floor(totalSec % 60);
-        const centis = Math.floor((elapsedMs % 1000) / 10);
-        
-        display.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(centis).padStart(2, '0')}`;
-
-        if (totalSec < 0.8) {
-          stage.innerText = 'Segmentando grade de resolução nativa 1:1...';
-        } else if (totalSec < 2.3) {
-          stage.innerText = 'Neurônios YOLOv8 inferindo localização dos grãos...';
-        } else if (totalSec < 3.2) {
-          stage.innerText = 'Executando NMS global e unificando bordas da bandeja...';
-        } else {
-          stage.innerText = 'Espectrometria HSV classificando os 5 estágios de maturação...';
-        }
-      }, 25);
-    }
-
-    function stopChronometer() {
-      if (chronoTimer) {
-        clearInterval(chronoTimer);
-        chronoTimer = null;
-      }
-      const elapsedSec = ((performance.now() - chronoStartTime) / 1000).toFixed(2);
-      const badge = document.getElementById('badge-last-time');
-      badge.style.display = 'inline-block';
-      badge.innerText = `⏱️ ${elapsedSec}s`;
-      return elapsedSec;
-    }
-
-    async function runAnalysis() {
-      const loader = document.getElementById('loader');
-      const btn = document.getElementById('btn-run');
-      loader.style.display = 'flex';
-      btn.disabled = true;
-
-      startChronometer();
-
-      const fd = new FormData();
-      fd.append('confidence', document.getElementById('rng-conf').value);
-      fd.append('box_thickness', document.getElementById('rng-box-thick').value);
-      fd.append('style', 'boxes'); // Modo Bounding Boxes estrito
-      fd.append('auto_learn', document.getElementById('chk-auto-learn').checked ? 'true' : 'false');
-
-      const fileInput = document.getElementById('file-upload');
-      if (fileInput.files && fileInput.files[0]) {
-        fd.append('file', fileInput.files[0]);
-      } else {
-        const sampleName = document.getElementById('sel-sample').value;
-        if (!sampleName) {
-          alert('Selecione uma amostra ou envie uma foto.');
-          stopChronometer();
-          loader.style.display = 'none';
-          btn.disabled = false;
-          return;
-        }
-        fd.append('sample_name', sampleName);
-      }
-
-      try {
-        const res = await fetch('/api/analyze', { method: 'POST', body: fd });
-        const data = await res.json();
-
-        if (data.error) {
-          alert('Erro: ' + data.error);
-        } else {
-          currentResult = data;
-          showingAnnotated = true;
-          renderResults(data);
-          fetchStatus();
-        }
-      } catch (e) {
-        alert('Erro ao comunicar com o servidor: ' + e.message);
-      } finally {
-        stopChronometer();
-        loader.style.display = 'none';
-        btn.disabled = false;
-      }
-    }
-
-    function renderResults(data) {
-      // KPIs
-      document.getElementById('val-total').innerText = Number(data.total_graos).toLocaleString('pt-BR');
-      document.getElementById('val-verde').innerText = Number(data.counts.verde || 0).toLocaleString('pt-BR');
-      document.getElementById('val-cereja_1').innerText = Number(data.counts.cereja_1 ?? data.counts.amarelo ?? 0).toLocaleString('pt-BR');
-      document.getElementById('val-cereja_2').innerText = Number(data.counts.cereja_2 ?? data.counts.cereja ?? 0).toLocaleString('pt-BR');
-      document.getElementById('val-passa').innerText = Number(data.counts.passa ?? data.counts.passado ?? 0).toLocaleString('pt-BR');
-      document.getElementById('val-seco').innerText = Number(data.counts.seco || 0).toLocaleString('pt-BR');
-
-      document.getElementById('pct-verde').innerText = `${data.ratios.verde || 0}%`;
-      document.getElementById('pct-cereja_1').innerText = `${data.ratios.cereja_1 ?? data.ratios.amarelo ?? 0}%`;
-      document.getElementById('pct-cereja_2').innerText = `${data.ratios.cereja_2 ?? data.ratios.cereja ?? 0}%`;
-      document.getElementById('pct-passa').innerText = `${data.ratios.passa ?? data.ratios.passado ?? 0}%`;
-      document.getElementById('pct-seco').innerText = `${data.ratios.seco || 0}%`;
-
-      // Exibir imagem anotada com Bounding Boxes
-      displayImage(data.annotated_image_b64, data.image_name, '[Detectado com BBoxes]');
-      
-      // Mostrar botão para alternar entre original e anotada
-      const toggleBtn = document.getElementById('btn-toggle-view');
-      toggleBtn.style.display = 'inline-block';
-      toggleBtn.classList.remove('active');
-      toggleBtn.innerText = '🔲 Vendo: Bounding Boxes';
-
-      // Diagnóstico
-      const diag = document.getElementById('diag-container');
-      diag.style.display = 'block';
-      diag.style.backgroundColor = `${data.badge_cor}15`;
-      diag.style.borderColor = `${data.badge_cor}40`;
-      const header = document.getElementById('diag-header');
-      header.innerText = `● ${data.status_colheita}`;
-      header.style.color = data.badge_cor;
-      document.getElementById('diag-desc').innerText = data.recomendacao;
-
-      // SVG Donut Chart
-      renderDonut(data.counts, data.total_graos);
-      document.getElementById('chart-box').style.display = 'flex';
-      document.getElementById('chart-legend').style.display = 'grid';
-      document.getElementById('btn-export-csv').style.display = 'block';
-    }
-
-    function renderDonut(counts, total) {
-      document.getElementById('donut-total').innerText = total;
-      const circ = 2 * Math.PI * 38; // ~238.76
-
-      const order = ['verde', 'cereja_1', 'cereja_2', 'passa', 'seco'];
-      let offset = 0;
-
-      order.forEach(k => {
-        const seg = document.getElementById(`seg-${k}`);
-        if (!seg) return;
-        const count = counts[k] ?? (k === 'cereja_1' ? counts['amarelo'] : k === 'cereja_2' ? counts['cereja'] : k === 'passa' ? counts['passado'] : 0) ?? 0;
-        const fraction = total > 0 ? count / total : 0;
-        const dash = fraction * circ;
-        seg.style.strokeDasharray = `${dash} ${circ - dash}`;
-        seg.style.strokeDashoffset = -offset;
-        offset += dash;
-      });
-    }
-
-    async function forceFineTuning() {
-      if (!confirm('Deseja iniciar um ciclo de aperfeiçoamento contínuo dos neurônios da rede neural?')) return;
-      const btn = document.getElementById('btn-force-learn');
-      btn.innerText = '⏳ Treinando...';
-      btn.disabled = true;
-
-      try {
-        const res = await fetch('/api/learn', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ epochs: 3 })
-        });
-        const data = await res.json();
-        if (data.status === 'sucesso') {
-          alert(`Aprendizado concluído com sucesso! Nova versão ativa: ${data.details.new_version}`);
-          fetchStatus();
-        } else {
-          alert('Falha: ' + data.message);
-        }
-      } catch (e) {
-        alert('Erro ao disparar fine-tuning: ' + e.message);
-      } finally {
-        btn.innerText = '⚡ Forçar Ciclo de Aperfeiçoamento';
-        btn.disabled = false;
-      }
-    }
-
-    function exportCSV() {
-      if (!currentResult) return;
-      const c = currentResult.counts;
-      const r = currentResult.ratios;
-      const c1 = c.cereja_1 ?? c.amarelo ?? 0;
-      const r1 = r.cereja_1 ?? r.amarelo ?? 0;
-      const c2 = c.cereja_2 ?? c.cereja ?? 0;
-      const r2 = r.cereja_2 ?? r.cereja ?? 0;
-      const cp = c.passa ?? c.passado ?? 0;
-      const rp = r.passa ?? r.passado ?? 0;
-
-      const csv = "data:text/csv;charset=utf-8," +
-        "Classe,Contagem,Percentual\n" +
-        `Verde,${c.verde || 0},${r.verde || 0}%\n` +
-        `Cereja I,${c1},${r1}%\n` +
-        `Cereja II (Apice da Qualidade),${c2},${r2}%\n` +
-        `Passa (Apice da Qualidade),${cp},${rp}%\n` +
-        `Seco,${c.seco || 0},${r.seco || 0}%\n` +
-        `Total,${currentResult.total_graos},100%`;
-
-      const encoded = encodeURI(csv);
-      const a = document.createElement("a");
-      a.href = encoded;
-      a.download = `relatorio_maturacao_${Date.now()}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-  </script>
+wireInputs();
+wireViewer();
+wireStageLinks();
+renderReading(null);
+loadStatus();
+loadSamples();
+loadHistory();
+</script>
 </body>
 </html>

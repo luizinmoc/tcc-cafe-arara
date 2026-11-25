@@ -332,6 +332,7 @@ def run_inference(
         "counts": counts,
         "ratios": ratios,
         "detections_sample": detections[:50],  # amostra para tabela
+        "detections": detections,
         "recomendacao": recomendacao,
         "status_colheita": status_colheita,
         "badge_cor": badge_cor,
